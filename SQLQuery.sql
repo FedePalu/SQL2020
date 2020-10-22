@@ -1,4 +1,4 @@
-use GD2C2020
+USE GD2C2020
 
 --			MOTORES			--	
 SELECT
@@ -121,3 +121,89 @@ create table Cajas_de_cambio(
 );
 
 -- DE DONDE SALIO CANT CAMBIOS? cod_caja not null? --
+
+
+--			COMPRAS			--
+
+CREATE TABLE Compras(
+	nro_compra decimal(18,0) PRIMARY KEY NOT NULL,
+	cod_suc bigint FOREIGN KEY REFERENCES Sucursales(cod_suc)
+)
+
+/*
+INSERT INTO Compras
+SELECT COMPRA_NRO AS nro_compra
+FROM gd_esquema.Maestra
+*/
+
+CREATE TABLE Compras_Auto(
+	fecha_compra_auto datetime2(3),
+	precio_compra_auto decimal(18,2),
+	num_chasis nvarchar(50) FOREIGN KEY REFERENCES Autos(num_chasis)
+)
+
+CREATE TABLE Compras_Autoparte(
+	cant_compra_parte decimal(18,0),
+	cod_autoparte decimal(18,0) FOREIGN KEY REFERENCES Autopartes(cod_autoparte) 
+)
+
+
+--			SUCURSALES			--
+
+CREATE TABLE Sucursales(
+	cod_suc bigint identity(1,1) PRIMARY KEY NOT NULL,
+	mail_suc nvarchar(255),
+	tel_suc decimal(18,0),
+	ciu_suc nvarchar(255),
+	dir_suc nvarchar(255)
+)
+
+DROP TABLE Sucursales
+
+ALTER PROCEDURE CargarTablaSucursales
+AS
+BEGIN
+	INSERT INTO Sucursales(mail_suc, tel_suc, ciu_suc, dir_suc)
+	VALUES( 
+	(SELECT SUCURSAL_MAIL 
+		FROM gd_esquema.Maestra 
+		WHERE SUCURSAL_MAIL = 'Sucursal N°8@gmail.com'
+		AND SUCURSAL_TELEFONO = 84061310
+		AND SUCURSAL_CIUDAD = 'Los Polvorines'
+		AND SUCURSAL_DIRECCION = 'Lavalle9510'
+		AND CLIENTE_DNI = 62177881),
+	(SELECT SUCURSAL_TELEFONO 
+		FROM gd_esquema.Maestra 
+		WHERE SUCURSAL_MAIL = 'Sucursal N°8@gmail.com'
+		AND SUCURSAL_TELEFONO = 84061310
+		AND SUCURSAL_CIUDAD = 'Los Polvorines'
+		AND SUCURSAL_DIRECCION = 'Lavalle9510'
+		AND CLIENTE_DNI = 62177881),
+	(SELECT SUCURSAL_CIUDAD 
+		FROM gd_esquema.Maestra 
+		WHERE SUCURSAL_MAIL = 'Sucursal N°8@gmail.com'
+		AND SUCURSAL_TELEFONO = 84061310
+		AND SUCURSAL_CIUDAD = 'Los Polvorines'
+		AND SUCURSAL_DIRECCION = 'Lavalle9510'
+		AND CLIENTE_DNI = 62177881),
+	(SELECT SUCURSAL_DIRECCION 
+		FROM gd_esquema.Maestra 
+		WHERE SUCURSAL_MAIL = 'Sucursal N°8@gmail.com'
+		AND SUCURSAL_TELEFONO = 84061310
+		AND SUCURSAL_CIUDAD = 'Los Polvorines'
+		AND SUCURSAL_DIRECCION = 'Lavalle9510'
+		AND CLIENTE_DNI = 62177881)
+	)
+END
+
+EXEC CargarTablaSucursales
+
+SELECT * FROM Sucursales
+
+SELECT * 
+FROM gd_esquema.Maestra
+WHERE SUCURSAL_MAIL = 'Sucursal N°8@gmail.com'
+		AND SUCURSAL_TELEFONO = 84061310
+		AND SUCURSAL_CIUDAD = 'Los Polvorines'
+		AND SUCURSAL_DIRECCION = 'Lavalle9510'
+		AND CLIENTE_DNI = 62177881
