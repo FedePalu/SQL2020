@@ -64,14 +64,13 @@ BEGIN
 	)
 END
 
-CREATE PROCEDURE CargarClientes
+CREATE PROCEDURE CargarClientes1
 AS
 BEGIN
 	INSERT INTO Clientes (nom_clie, ape_clie, dir_clie, nac_clie, mail_clie, dni_clie)
 	SELECT CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
 	FROM gd_esquema.Maestra
-	WHERE CLIENTE_DNI IS NOT NULL AND
-	FAC_CLIENTE_DNI IS NOT NULL
+	WHERE CLIENTE_DNI IS NOT NULL
 	GROUP BY CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
 END
 
@@ -82,23 +81,25 @@ INSERT INTO Clientes (nom_clie, ape_clie, dir_clie, nac_clie, mail_clie, dni_cli
 	SELECT FAC_CLIENTE_NOMBRE, FAC_CLIENTE_APELLIDO, FAC_CLIENTE_DIRECCION, FAC_CLIENTE_FECHA_NAC, FAC_CLIENTE_MAIL, FAC_CLIENTE_DNI
 	FROM gd_esquema.Maestra
 	WHERE FAC_CLIENTE_DNI IS NOT NULL
-	GROUP BY CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
+	GROUP BY FAC_CLIENTE_NOMBRE, FAC_CLIENTE_APELLIDO, FAC_CLIENTE_DIRECCION, FAC_CLIENTE_FECHA_NAC, FAC_CLIENTE_MAIL, FAC_CLIENTE_DNI
 END
 
 CREATE PROCEDURE ProcedimientoClientes
 AS
 BEGIN
 	EXEC CrearClientes
-	EXEC CargarClientes
+	EXEC CargarClientes1
+	EXEC CargarClientes2
 END
 
 EXEC ProcedimientoClientes
 
 SELECT * FROM Clientes
 
-DROP TABLE Clientes
+DROP TABLE clientes
 DROP PROCEDURE CrearClientes
-DROP PROCEDURE CargarClientes
+DROP PROCEDURE CargarClientes1
+DROP PROCEDURE CargarClientes2
 DROP PROCEDURE ProcedimientoClientes
 
 
@@ -129,6 +130,8 @@ BEGIN
 	ALTER TABLE Facturas add FOREIGN KEY (cod_clie) REFERENCES Clientes(cod_clie)
 END
 
+select * from gd_esquema.Maestra
+
 CREATE PROCEDURE CargarFacturas
 AS
 BEGIN
@@ -137,8 +140,7 @@ BEGIN
 	SELECT M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 	FROM gd_esquema.Maestra M
 	LEFT JOIN Clientes C on 
-	C.nom_clie = M.CLIENTE_NOMBRE AND
-	C.ape_clie = M.CLIENTE_APELLIDO
+	C.dni_clie = M.CLIENTE_DNI
 	LEFT JOIN Sucursales S on S.mail_suc = M.FAC_SUCURSAL_MAIL
 	WHERE M.FACTURA_NRO IS NOT NULL AND
 	M.PRECIO_FACTURADO IS NOT NULL AND
@@ -147,6 +149,7 @@ BEGIN
 	M.FAC_CLIENTE_FECHA_NAC IS NOT NULL
 	GROUP BY M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 END
+
 
 CREATE PROCEDURE ProcedimientoFactura
 AS
@@ -202,8 +205,6 @@ BEGIN
 END
 
 EXEC ProcedimientoMotores
-
-select * from gd_esquema.Maestra order by MODELO_NOMBRE 
 
 
 SELECT * FROM Motores
@@ -270,14 +271,18 @@ AS
 BEGIN
 	SET	NOCOUNT ON;
 	create table Modelos (
-		cod_modelo bigint identity(1,1) PRIMARY KEY,
-		tipo_modelo decimal(18,0),
+		--cod_modelo bigint identity(1,1) ,
+		cod_modelo decimal(18,0) PRIMARY KEY,
 		nom_modelo nvarchar(255),
 		fabricante_modelo nvarchar(255),
 		cod_caja bigint,
 		cod_motor bigint 
 	)
 END
+
+SELECT * FROM gd_esquema.Maestra order by MODELO_CODIGO
+
+SELECT * FROM MODELOS
 
 CREATE PROCEDURE AgregarKeysModelos
 AS
@@ -290,7 +295,7 @@ CREATE PROCEDURE CargarModelos
 AS
 BEGIN
 	SET	NOCOUNT ON;
-	INSERT INTO Modelos (tipo_modelo, nom_modelo, fabricante_modelo, cod_caja, cod_motor)
+	INSERT INTO Modelos (cod_modelo, nom_modelo, fabricante_modelo, cod_caja, cod_motor)
 	SELECT A.MODELO_CODIGO, A.MODELO_NOMBRE, A.FABRICANTE_NOMBRE, C.cod_caja, M.cod_motor
 	FROM gd_esquema.Maestra A
 	LEFT JOIN Motores M ON
@@ -303,7 +308,8 @@ BEGIN
 	C.tipo_caja = A.TIPO_CAJA_CODIGO
 	WHERE A.TIPO_MOTOR_CODIGO IS NOT NULL AND
 	A.TIPO_CAJA_CODIGO is not null AND
-	A.FABRICANTE_NOMBRE is not null
+	A.FABRICANTE_NOMBRE is not null AND
+	A.MODELO_CODIGO IS NOT NULL
 	GROUP BY A.MODELO_CODIGO, A.MODELO_NOMBRE, A.FABRICANTE_NOMBRE, C.cod_caja, M.cod_motor
 END
 
@@ -321,7 +327,7 @@ SELECT * FROM gd_esquema.Maestra order by MODELO_CODIGO
 
 SELECT * FROM Modelos
 
-DROP TABLE Modelos
+DROP TABLE modelos
 DROP PROCEDURE CrearModelos
 DROP PROCEDURE AgregarKeysModelos
 DROP PROCEDURE CargarModelos
@@ -399,7 +405,7 @@ BEGIN
 		kms_auto decimal(18,0),
 		pat_auto nvarchar(50),
 		nro_motor nvarchar(50),
-		cod_modelo bigint
+		cod_modelo decimal(18,0)
 	)
 END
 
@@ -421,7 +427,7 @@ BEGIN
 	SELECT Ma.AUTO_NRO_CHASIS, Ma.TIPO_AUTO_CODIGO, Ma.TIPO_AUTO_DESC, Ma.AUTO_FECHA_ALTA, Ma.AUTO_CANT_KMS, Ma.AUTO_PATENTE, Ma.AUTO_NRO_MOTOR, Mo.cod_modelo
 	FROM gd_esquema.Maestra Ma
 	LEFT JOIN Modelos Mo ON 
-	Mo.tipo_modelo = Ma.MODELO_CODIGO AND 
+	Mo.cod_modelo = Ma.MODELO_CODIGO AND 
 	Mo.nom_modelo = Ma.MODELO_NOMBRE AND 
 	Mo.fabricante_modelo = Ma.FABRICANTE_NOMBRE 
 	WHERE Ma.AUTO_NRO_CHASIS is not null and
@@ -470,7 +476,7 @@ BEGIN
 		cod_autoparte decimal(18,0) PRIMARY KEY,
 		desc_autoparte nvarchar(255),
 		precio_autoparte decimal(18,2),
-		cod_modelo bigint
+		cod_modelo decimal(18,0)
 	)
 END
 
@@ -488,7 +494,7 @@ BEGIN
 	SELECT Ma.AUTO_PARTE_CODIGO, Ma.AUTO_PARTE_DESCRIPCION, Mo.cod_modelo
 	FROM gd_esquema.Maestra Ma
 	LEFT JOIN Modelos Mo ON 
-	Ma.MODELO_CODIGO = Mo.tipo_modelo AND 
+	Ma.MODELO_CODIGO = Mo.cod_modelo AND 
 	Ma.MODELO_NOMBRE = Mo.nom_modelo AND 
 	Ma.FABRICANTE_NOMBRE = Mo.fabricante_modelo
 	WHERE Ma.AUTO_PARTE_CODIGO IS NOT NULL
@@ -784,3 +790,30 @@ DROP PROCEDURE CrearComprasAutoparte
 DROP PROCEDURE AgregarKeyComprasAutoparte
 DROP PROCEDURE CargarComprasAutoparte
 DROP PROCEDURE ProcedimientoComprasAutoparte
+
+
+CREATE PROCEDURE MigracionDeDatos
+AS
+BEGIN
+EXEC ProcedimientoSucursales
+EXEC ProcedimientoClientes
+EXEC ProcedimientoMotores
+EXEC ProcedimientoCajas
+EXEC ProcedimientoModelos
+EXEC ProcedimientoAutos
+EXEC ProcedimientoAutopartes
+EXEC ProcedimientoCompra
+EXEC ProcedimientoComprasAuto
+EXEC ProcedimientoComprasAutoparte
+EXEC ProcedimientoFactura
+EXEC ProcedimientoFacturasAuto
+EXEC ProcedimientoFacturasAutoparte
+END
+
+drop table motores
+
+select * from Cajas_de_cambio
+
+
+EXEC MIgracionDeDatos
+
