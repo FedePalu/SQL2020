@@ -259,6 +259,10 @@ WHERE SUCURSAL_MAIL = 'Sucursal N°8@gmail.com'
 
 --		SUCURSAL		--
 
+CREATE PROCEDURE CrearSucursales
+AS
+BEGIN
+SET	NOCOUNT ON;
 CREATE TABLE Sucursales(
 	cod_suc bigint identity(1,1) PRIMARY KEY NOT NULL,
 	mail_suc nvarchar(255),
@@ -266,58 +270,30 @@ CREATE TABLE Sucursales(
 	ciu_suc nvarchar(255),
 	dir_suc nvarchar(255)
 )
+END
 
+CREATE PROCEDURE CargarSucursales
+AS
+BEGIN
 INSERT INTO Sucursales (mail_suc, tel_suc, ciu_suc, dir_suc)
 SELECT SUCURSAL_MAIL, SUCURSAL_TELEFONO, SUCURSAL_CIUDAD, SUCURSAL_DIRECCION
 FROM gd_esquema.Maestra
 WHERE SUCURSAL_MAIL is not null
 GROUP BY SUCURSAL_MAIL, SUCURSAL_TELEFONO, SUCURSAL_CIUDAD, SUCURSAL_DIRECCION
-
-select * from sucursales
-
-drop table sucursales
-
-CREATE PROCEDURE CargarTablaSucursales
-AS
-BEGIN
-SET	NOCOUNT ON;
-	SELECT
-   SUCURSAL_MAIL as mail_suc,
-   SUCURSAL_TELEFONO as tel_suc,
-   SUCURSAL_CIUDAD as ciu_suc,
-   SUCURSAL_DIRECCION as dir_suc
-INTO 
-    Sucursales
-FROM    
-    gd_esquema.Maestra	
-WHERE
-SUCURSAL_MAIL is not null
 END
 
-drop procedure CargarTablaSucursales
-
-CREATE PROCEDURE AgregarPKSucursales
+CREATE PROCEDURE ProcedimientoSucursales
 AS
 BEGIN
-ALTER TABLE sucursales
-ADD cod_suc bigint identity(1,1) PRIMARY KEY;
-END
-
-CREATE PROCEDURE CrearSucursales
-AS
-BEGIN
-EXEC CargarTablaSucursales
-EXEC AgregarPKSucursales
-END
-
 EXEC CrearSucursales
+EXEC CargarSucursales
+END
 
-drop table sucursales
+EXEC ProcedimientoSucursales
 
 select * from sucursales
 
-ALTER TABLE sucursales
-ADD cod_suc bigint identity(1,1) PRIMARY KEY;
+drop table sucursales
 
 
 
@@ -346,44 +322,43 @@ select * from clientes
 
 drop table clientes
 
-CREATE PROCEDURE CargarClientes
+CREATE PROCEDURE CrearClientes
 AS
 BEGIN
 SET	NOCOUNT ON;
-	SELECT
-   CLIENTE_NOMBRE as nom_clie,
-   CLIENTE_APELLIDO as ape_clie,
-   CLIENTE_DIRECCION as dir_clie,
-   CLIENTE_FECHA_NAC as nac_clie,
-   CLIENTE_MAIL as mail_clie,
-   CLIENTE_DNI as dni_clie
-INTO 
-    Clientes
-FROM    
-    gd_esquema.Maestra
-WHERE
-CLIENTE_DNI is not null;
+CREATE TABLE Clientes(
+	cod_clie bigint identity(1,1) PRIMARY KEY NOT NULL,
+	nom_clie nvarchar(255),
+	ape_clie nvarchar(255),
+	dir_clie nvarchar(255),
+	nac_clie datetime2(3),
+	mail_clie nvarchar(255),
+	dni_clie decimal(18,0),
+)
 END
 
 drop procedure CargarClientes
 
-CREATE PROCEDURE AgregarPKClientes
+CREATE PROCEDURE CargarClientes
 AS
 BEGIN
-ALTER TABLE Clientes
-ADD cod_clie bigint identity(1,1) PRIMARY KEY;
+INSERT INTO Clientes (nom_clie, ape_clie, dir_clie, nac_clie, mail_clie, dni_clie)
+SELECT CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
+FROM gd_esquema.Maestra
+WHERE CLIENTE_DNI is not null and
+FAC_CLIENTE_DNI is not null
+GROUP BY CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
 END
 
-CREATE PROCEDURE CrearClientes
+CREATE PROCEDURE ProcedimientoClientes
 AS
 BEGIN
-EXEC CargarClientes
-EXEC AgregarPKClientes
-END
-
 EXEC CrearClientes
+EXEC CargarClientes
+END
 
-drop table clientes
+EXEC ProcedimientoClientes
+
 
 select * from clientes
 
