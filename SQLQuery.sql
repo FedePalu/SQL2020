@@ -380,6 +380,15 @@ CREATE TABLE Facturas(
 )
 END
 
+
+CREATE PROCEDURE AgregarKeysFacturas
+AS
+BEGIN
+alter table Facturas add FOREIGN KEY (cod_suc) REFERENCES Sucursales(cod_suc)
+alter table Facturas add FOREIGN KEY (cod_clie) REFERENCES Clientes(cod_clie)
+END
+
+
 CREATE PROCEDURE CargarFacturas
 AS
 BEGIN
@@ -399,14 +408,165 @@ M.FAC_CLIENTE_FECHA_NAC is not null
 GROUP BY M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 END
 
+
 CREATE PROCEDURE ProcedimientoFactura
 AS
 BEGIN
 SET NOCOUNT ON;
 EXEC CrearFacturas
+EXEC AgregarKeysFacturas
 EXEC CargarFacturas
 END
 
 exec ProcedimientoFactura
 
+drop table facturas
+
 select * from facturas
+
+
+
+
+
+--		Motores		--
+
+CREATE PROCEDURE CrearMotores
+AS
+BEGIN
+SET	NOCOUNT ON;
+CREATE TABLE Motores(
+	cod_motor bigint identity(1,1) PRIMARY KEY NOT NULL,
+	tipo_motor decimal(18,0),
+	pot_motor decimal(18,0),
+	nro_motor nvarchar(50)
+)
+END
+
+
+CREATE PROCEDURE CargarMotores
+AS
+BEGIN
+INSERT INTO Motores (tipo_motor, pot_motor, nro_motor)
+SELECT TIPO_MOTOR_CODIGO, MODELO_POTENCIA, AUTO_NRO_MOTOR
+FROM gd_esquema.Maestra
+GROUP BY TIPO_MOTOR_CODIGO, MODELO_POTENCIA, AUTO_NRO_MOTOR
+END
+
+
+CREATE PROCEDURE ProcedimientoMotores
+AS
+BEGIN
+EXEC CrearMotores
+EXEC CargarMotores
+END
+
+EXEC ProcedimientoMotores
+
+select * from Motores
+
+
+
+--		Cajas de cambio		--
+
+
+CREATE PROCEDURE CrearCajas
+AS
+BEGIN
+SET	NOCOUNT ON;
+CREATE TABLE Cajas_de_cambio(
+	cod_caja bigint identity(1,1) PRIMARY KEY NOT NULL,
+	cod_transmision decimal(18,0),
+	desc_transmision nvarchar(255),
+	desc_caja nvarchar(255),
+	tipo_caja decimal(18,0)
+	--cant_cambios? 
+)
+END
+
+
+CREATE PROCEDURE CargarCajas
+AS
+BEGIN
+INSERT INTO Cajas_de_cambio (cod_transmision, desc_transmision, desc_caja, tipo_caja)
+SELECT TIPO_TRANSMISION_CODIGO, TIPO_TRANSMISION_DESC, TIPO_CAJA_DESC, TIPO_CAJA_CODIGO
+FROM gd_esquema.Maestra
+WHERE TIPO_CAJA_CODIGO is not null
+GROUP BY TIPO_TRANSMISION_CODIGO, TIPO_TRANSMISION_DESC, TIPO_CAJA_DESC, TIPO_CAJA_CODIGO
+END
+
+
+CREATE PROCEDURE ProcedimientoCajas
+AS
+BEGIN
+EXEC CrearCajas
+EXEC CargarCajas
+END
+
+EXEC ProcedimientoCajas
+
+select * from cajas_de_cambio
+
+
+
+
+--		MODELOS		--	 VER XQ HAY MUCHOS REGISTROS IGUALES SOLO POR UN CAMPO DISTINTO
+
+
+CREATE PROCEDURE CrearModelos
+AS
+BEGIN
+SET	NOCOUNT ON;
+create table Modelos (
+	cod_modelo bigint identity(1,1) PRIMARY KEY,
+	tipo_modelo decimal(18,0),
+	nom_modelo nvarchar(255),
+	fabricante_modelo nvarchar(255),
+	cod_caja bigint,
+	cod_motor bigint 
+)
+END
+
+
+CREATE PROCEDURE AgregarKeysModelos
+AS
+BEGIN
+alter table Modelos add FOREIGN KEY (cod_caja) REFERENCES Cajas_de_cambio(cod_caja)
+alter table Modelos add FOREIGN KEY (cod_motor) REFERENCES Motores(cod_motor)
+END
+
+
+CREATE PROCEDURE CargarModelos
+AS
+BEGIN
+SET	NOCOUNT ON;
+INSERT INTO Modelos (tipo_modelo, nom_modelo, fabricante_modelo, cod_caja, cod_motor)
+SELECT A.MODELO_CODIGO, A.MODELO_NOMBRE, A.FABRICANTE_NOMBRE, C.cod_caja, M.cod_motor
+FROM gd_esquema.Maestra A
+LEFT JOIN Motores M on 
+M.nro_motor= A.AUTO_NRO_MOTOR and
+M.pot_motor= A.MODELO_POTENCIA and
+M.tipo_motor = A.TIPO_MOTOR_CODIGO
+LEFT JOIN Cajas_de_cambio C on 
+C.cod_transmision = A.TIPO_TRANSMISION_CODIGO and
+C.desc_transmision = A.TIPO_TRANSMISION_DESC and
+C.desc_caja = A.TIPO_CAJA_DESC and
+C.tipo_caja = A.TIPO_CAJA_CODIGO
+--WHERE M.FACTURA_NRO is not null and 
+GROUP BY A.MODELO_CODIGO, A.MODELO_NOMBRE, A.FABRICANTE_NOMBRE, C.cod_caja, M.cod_motor
+END
+
+
+CREATE PROCEDURE ProcedimientoModelos
+AS
+BEGIN
+SET NOCOUNT ON;
+EXEC CrearModelos
+EXEC AgregarKeysModelos
+EXEC CargarModelos
+END
+
+exec ProcedimientoModelos
+
+select * from Modelos
+
+
