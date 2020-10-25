@@ -75,6 +75,16 @@ BEGIN
 	GROUP BY CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
 END
 
+CREATE PROCEDURE CargarClientes2
+AS
+BEGIN
+INSERT INTO Clientes (nom_clie, ape_clie, dir_clie, nac_clie, mail_clie, dni_clie)
+	SELECT FAC_CLIENTE_NOMBRE, FAC_CLIENTE_APELLIDO, FAC_CLIENTE_DIRECCION, FAC_CLIENTE_FECHA_NAC, FAC_CLIENTE_MAIL, FAC_CLIENTE_DNI
+	FROM gd_esquema.Maestra
+	WHERE FAC_CLIENTE_DNI IS NOT NULL
+	GROUP BY CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
+END
+
 CREATE PROCEDURE ProcedimientoClientes
 AS
 BEGIN
@@ -170,18 +180,18 @@ BEGIN
 	CREATE TABLE Motores(
 		cod_motor bigint identity(1,1) PRIMARY KEY NOT NULL,
 		tipo_motor decimal(18,0),
-		pot_motor decimal(18,0),
-		nro_motor nvarchar(50)
+		pot_motor decimal(18,0)
 	)
 END
 
 CREATE PROCEDURE CargarMotores
 AS
 BEGIN
-	INSERT INTO Motores (tipo_motor, pot_motor, nro_motor)
-	SELECT TIPO_MOTOR_CODIGO, MODELO_POTENCIA, AUTO_NRO_MOTOR
+	INSERT INTO Motores (tipo_motor, pot_motor)
+	SELECT TIPO_MOTOR_CODIGO, MODELO_POTENCIA
 	FROM gd_esquema.Maestra
-	GROUP BY TIPO_MOTOR_CODIGO, MODELO_POTENCIA, AUTO_NRO_MOTOR
+	WHERE TIPO_MOTOR_CODIGO is not null
+	GROUP BY TIPO_MOTOR_CODIGO, MODELO_POTENCIA
 END
 
 CREATE PROCEDURE ProcedimientoMotores
@@ -192,6 +202,9 @@ BEGIN
 END
 
 EXEC ProcedimientoMotores
+
+select * from gd_esquema.Maestra order by MODELO_NOMBRE 
+
 
 SELECT * FROM Motores
 
@@ -281,15 +294,16 @@ BEGIN
 	SELECT A.MODELO_CODIGO, A.MODELO_NOMBRE, A.FABRICANTE_NOMBRE, C.cod_caja, M.cod_motor
 	FROM gd_esquema.Maestra A
 	LEFT JOIN Motores M ON
-	M.nro_motor= A.AUTO_NRO_MOTOR AND
-	M.pot_motor= A.MODELO_POTENCIA AND
-	M.tipo_motor = A.TIPO_MOTOR_CODIGO
+	M.tipo_motor = A.TIPO_MOTOR_CODIGO AND
+	M.pot_motor = A.MODELO_POTENCIA
 	LEFT JOIN Cajas_de_cambio C ON
 	C.cod_transmision = A.TIPO_TRANSMISION_CODIGO AND
 	C.desc_transmision = A.TIPO_TRANSMISION_DESC AND
 	C.desc_caja = A.TIPO_CAJA_DESC AND
 	C.tipo_caja = A.TIPO_CAJA_CODIGO
-	--WHERE M.FACTURA_NRO IS NOT NULL AND 
+	WHERE A.TIPO_MOTOR_CODIGO IS NOT NULL AND
+	A.TIPO_CAJA_CODIGO is not null AND
+	A.FABRICANTE_NOMBRE is not null
 	GROUP BY A.MODELO_CODIGO, A.MODELO_NOMBRE, A.FABRICANTE_NOMBRE, C.cod_caja, M.cod_motor
 END
 
@@ -302,6 +316,8 @@ BEGIN
 END
 
 EXEC ProcedimientoModelos
+
+SELECT * FROM gd_esquema.Maestra order by MODELO_CODIGO
 
 SELECT * FROM Modelos
 
@@ -375,12 +391,14 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	CREATE TABLE Autos(
-		nro_chasis nvarchar(50) PRIMARY KEY NOT NULL,
-		cod_auto decimal(18,0),
+		cod_auto bigint identity(1,1) PRIMARY KEY,
+		nro_chasis nvarchar(50),
+		tipo_auto decimal(18,0),
 		desc_auto nvarchar(255),
 		fecha_alta_auto datetime2(3),
 		kms_auto decimal(18,0),
 		pat_auto nvarchar(50),
+		nro_motor nvarchar(50),
 		cod_modelo bigint
 	)
 END
@@ -391,18 +409,34 @@ BEGIN
 	ALTER TABLE Autos ADD FOREIGN KEY (cod_modelo) REFERENCES Modelos(cod_modelo)
 END
 
+select * from gd_esquema.Maestra
+
+select * from Modelos
+
 CREATE PROCEDURE CargarAutos	
 AS
 BEGIN
 	SET NOCOUNT ON
-	INSERT INTO Autos(nro_chasis, cod_auto, desc_auto, fecha_alta_auto, kms_auto, pat_auto, cod_modelo)	
-	SELECT Ma.AUTO_NRO_CHASIS, Ma.TIPO_AUTO_CODIGO, Ma.TIPO_AUTO_DESC, Ma.AUTO_FECHA_ALTA, Ma.AUTO_CANT_KMS, Ma.AUTO_PATENTE, Mo.cod_modelo
+	INSERT INTO Autos(nro_chasis, tipo_auto, desc_auto, fecha_alta_auto, kms_auto, pat_auto, nro_motor, cod_modelo)	
+	SELECT Ma.AUTO_NRO_CHASIS, Ma.TIPO_AUTO_CODIGO, Ma.TIPO_AUTO_DESC, Ma.AUTO_FECHA_ALTA, Ma.AUTO_CANT_KMS, Ma.AUTO_PATENTE, Ma.AUTO_NRO_MOTOR, Mo.cod_modelo
 	FROM gd_esquema.Maestra Ma
-	LEFT JOIN Modelos Mo ON Ma.MODELO_CODIGO =  Mo.tipo_modelo
-	AND Ma.MODELO_NOMBRE = Mo.nom_modelo
-	AND Ma.FABRICANTE_NOMBRE = Mo.fabricante_modelo
-	GROUP BY Ma.AUTO_NRO_CHASIS, Ma.TIPO_AUTO_CODIGO, Ma.TIPO_AUTO_DESC, Ma.AUTO_FECHA_ALTA, Ma.AUTO_CANT_KMS, Ma.AUTO_PATENTE, Mo.cod_modelo
+	LEFT JOIN Modelos Mo ON 
+	Mo.tipo_modelo = Ma.MODELO_CODIGO AND 
+	Mo.nom_modelo = Ma.MODELO_NOMBRE AND 
+	Mo.fabricante_modelo = Ma.FABRICANTE_NOMBRE 
+	WHERE Ma.AUTO_NRO_CHASIS is not null and
+	Ma.AUTO_FECHA_ALTA is not null and
+	Ma.TIPO_AUTO_DESC is not null and
+	Ma.AUTO_FECHA_ALTA is not null and
+	Ma.AUTO_CANT_KMS is not null and
+	Ma.AUTO_PATENTE is not null and
+	Ma.AUTO_NRO_MOTOR is not null
+	GROUP BY Ma.AUTO_NRO_CHASIS, Ma.TIPO_AUTO_CODIGO, Ma.TIPO_AUTO_DESC, Ma.AUTO_FECHA_ALTA, Ma.AUTO_CANT_KMS, Ma.AUTO_PATENTE, Ma.AUTO_NRO_MOTOR, Mo.cod_modelo
 END
+
+select * from modelos order by cod_motor
+
+select MODELO_POTENCIA from gd_esquema.Maestra order by MODELO_POTENCIA
 
 CREATE PROCEDURE ProcedimientoAutos
 AS 
@@ -433,8 +467,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	CREATE TABLE Autopartes(
-		id_autoparte bigint identity(1,1) PRIMARY KEY,
-		cod_autoparte decimal(18,0),
+		cod_autoparte decimal(18,0) PRIMARY KEY,
 		desc_autoparte nvarchar(255),
 		precio_autoparte decimal(18,2),
 		cod_modelo bigint
@@ -451,15 +484,17 @@ CREATE PROCEDURE CargarAutopartes
 AS
 BEGIN
 	SET NOCOUNT ON
-	INSERT INTO Autopartes(cod_autoparte, desc_autoparte, precio_autoparte, cod_modelo)
-	SELECT Ma.AUTO_PARTE_CODIGO, Ma.AUTO_PARTE_DESCRIPCION, Ma.COMPRA_PRECIO, Mo.cod_modelo
+	INSERT INTO Autopartes(cod_autoparte, desc_autoparte, cod_modelo)
+	SELECT Ma.AUTO_PARTE_CODIGO, Ma.AUTO_PARTE_DESCRIPCION, Mo.cod_modelo
 	FROM gd_esquema.Maestra Ma
-	LEFT JOIN Modelos Mo ON Ma.MODELO_CODIGO = Mo.tipo_modelo
-	AND Ma.MODELO_NOMBRE = Mo.nom_modelo
-	AND Ma.FABRICANTE_NOMBRE = Mo.fabricante_modelo
+	LEFT JOIN Modelos Mo ON 
+	Ma.MODELO_CODIGO = Mo.tipo_modelo AND 
+	Ma.MODELO_NOMBRE = Mo.nom_modelo AND 
+	Ma.FABRICANTE_NOMBRE = Mo.fabricante_modelo
 	WHERE Ma.AUTO_PARTE_CODIGO IS NOT NULL
-	GROUP BY Ma.AUTO_PARTE_CODIGO, Ma.AUTO_PARTE_DESCRIPCION, Ma.COMPRA_PRECIO, Mo.cod_modelo
+	GROUP BY Ma.AUTO_PARTE_CODIGO, Ma.AUTO_PARTE_DESCRIPCION, Mo.cod_modelo
 END
+
 
 CREATE PROCEDURE ProcedimientoAutopartes
 AS 
@@ -481,5 +516,271 @@ DROP PROCEDURE ProcedimientoAutopartes
 
 
 
---
---			
+
+--------------------------------------
+--          FACTURA AUTO            --
+--------------------------------------
+
+CREATE PROCEDURE CrearFacturaAuto
+AS
+SET NOCOUNT ON 
+BEGIN
+    CREATE TABLE FacturasAuto(
+        cod_fac_auto bigint PRIMARY KEY,
+        cod_auto bigint
+    )
+END
+
+CREATE PROCEDURE AgregarKeyFacturasAuto
+AS
+BEGIN
+    ALTER TABLE FacturasAuto ADD FOREIGN KEY (cod_fac_auto) REFERENCES Facturas(cod_fac)
+    ALTER TABLE FacturasAuto ADD FOREIGN KEY (cod_auto) REFERENCES Autos(cod_auto)
+END
+
+CREATE PROCEDURE CargarFacturasAuto
+AS
+SET NOCOUNT ON
+BEGIN
+    INSERT INTO FacturasAuto(cod_fac_auto, cod_auto)
+    SELECT F.cod_fac, A.cod_auto
+    FROM gd_esquema.Maestra M
+    LEFT JOIN Facturas F ON 
+	F.nro_fac = M.FACTURA_NRO AND 
+	F.precio_fac = M.PRECIO_FACTURADO AND 
+	F.fecha_fac = M.FACTURA_FECHA AND 
+	F.fecha_clie_fac = M.FAC_CLIENTE_FECHA_NAC
+    LEFT JOIN Autos A ON 
+	A.nro_chasis = M.AUTO_NRO_CHASIS AND 
+	A.tipo_auto = M.TIPO_AUTO_CODIGO AND 
+	A.desc_auto = M.TIPO_AUTO_DESC AND 
+	A.fecha_alta_auto = M.AUTO_FECHA_ALTA AND 
+	A.kms_auto = M.AUTO_CANT_KMS AND 
+	A.nro_motor = M.AUTO_NRO_MOTOR AND
+	A.pat_auto = M.AUTO_PATENTE 
+    WHERE M.TIPO_AUTO_CODIGO IS NOT NULL AND 
+	M.FACTURA_NRO IS NOT NULL
+    GROUP BY F.cod_fac, A.cod_auto
+END
+
+SELECT * FROM autos
+
+SELECT * FROM Facturas
+
+
+CREATE PROCEDURE ProcedimientoFacturasAuto
+AS
+BEGIN
+    EXEC CrearFacturaAuto
+    EXEC AgregarKeyFacturasAuto
+    EXEC CargarFacturasAuto
+END
+
+EXEC ProcedimientoFacturasAuto
+
+SELECT * FROM FacturasAuto
+
+DROP TABLE FacturasAuto
+DROP PROCEDURE CrearFacturaAuto
+DROP PROCEDURE AgregarKeyFacturasAuto
+DROP PROCEDURE CargarFacturasAuto
+DROP PROCEDURE ProcedimientoFacturasAuto
+
+
+
+
+--------------------------------------
+--		  FACTURA AUTOPARTE         --
+--------------------------------------
+
+CREATE PROCEDURE CrearFacturaAutoparte
+AS
+SET NOCOUNT ON 
+BEGIN
+    CREATE TABLE FacturasAutoparte(
+        cod_fac_autoparte bigint,
+        cod_autoparte decimal(18,0)
+    )
+END
+
+CREATE PROCEDURE AgregarKeyFacturasAutoparte
+AS
+BEGIN
+    ALTER TABLE FacturasAutoparte ADD FOREIGN KEY (cod_fac_autoparte) REFERENCES Facturas(cod_fac)
+    ALTER TABLE FacturasAutoparte ADD FOREIGN KEY (cod_autoparte) REFERENCES Autopartes(cod_autoparte)
+END
+
+CREATE PROCEDURE CargarFacturasAutoparte
+AS
+SET NOCOUNT ON
+BEGIN
+    INSERT INTO FacturasAutoparte(cod_fac_autoparte, cod_autoparte)
+    SELECT F.cod_fac, A.cod_autoparte
+    FROM gd_esquema.Maestra M
+    LEFT JOIN Facturas F ON 
+	F.nro_fac = M.FACTURA_NRO AND 
+	F.precio_fac = M.PRECIO_FACTURADO AND 
+	F.fecha_fac = M.FACTURA_FECHA AND 
+	F.fecha_clie_fac = M.FAC_CLIENTE_FECHA_NAC
+    LEFT JOIN Autopartes A ON 
+	A.cod_autoparte = M.AUTO_PARTE_CODIGO AND 
+	A.desc_autoparte = M.AUTO_PARTE_DESCRIPCION
+	WHERE M.AUTO_PARTE_CODIGO IS NOT NULL AND 
+	M.FACTURA_NRO IS NOT NULL
+    GROUP BY F.cod_fac, A.cod_autoparte
+END
+
+select * from facturas
+
+CREATE PROCEDURE ProcedimientoFacturasAutoparte
+AS
+BEGIN
+    EXEC CrearFacturaAutoparte
+    EXEC AgregarKeyFacturasAutoparte
+    EXEC CargarFacturasAutoparte
+END
+
+select * from gd_esquema.Maestra
+
+EXEC ProcedimientoFacturasAutoparte
+
+SELECT * FROM FacturasAutoparte
+
+DROP TABLE FacturasAutoparte
+DROP PROCEDURE CrearFacturaAutoparte
+DROP PROCEDURE AgregarKeyFacturasAutoparte
+DROP PROCEDURE CargarFacturasAutoparte
+DROP PROCEDURE ProcedimientoFacturasAutoparte
+
+
+
+--------------------------------------
+--			COMPRAS AUTO		    --
+--------------------------------------
+
+CREATE PROCEDURE CrearComprasAuto
+AS
+SET NOCOUNT ON 
+BEGIN
+    CREATE TABLE ComprasAuto(
+        id_compra_auto bigint identity(1,1) PRIMARY KEY,
+		cod_compra_auto bigint,
+        cod_auto bigint,
+		fecha_compra_auto datetime2(3),
+		precio_compra_auto decimal(18,2)
+    )
+END
+
+CREATE PROCEDURE AgregarKeyComprasAuto
+AS
+BEGIN
+    ALTER TABLE ComprasAuto ADD FOREIGN KEY (cod_compra_auto) REFERENCES Compras(cod_compra)
+    ALTER TABLE ComprasAuto ADD FOREIGN KEY (cod_auto) REFERENCES Autos(cod_auto)
+END
+
+CREATE PROCEDURE CargarComprasAuto
+AS
+SET NOCOUNT ON
+BEGIN
+    INSERT INTO ComprasAuto(cod_compra_auto, cod_auto, fecha_compra_auto, precio_compra_auto)
+    SELECT C.cod_compra, A.cod_auto, M.COMPRA_FECHA, M.COMPRA_PRECIO
+    FROM gd_esquema.Maestra M
+    LEFT JOIN Compras C ON 
+	C.nro_compra = M.COMPRA_NRO
+    LEFT JOIN Autos A ON 
+	A.nro_chasis = M.AUTO_NRO_CHASIS AND 
+	A.tipo_auto = M.TIPO_AUTO_CODIGO AND 
+	A.desc_auto = M.TIPO_AUTO_DESC AND 
+	A.fecha_alta_auto = M.AUTO_FECHA_ALTA AND 
+	A.kms_auto = M.AUTO_CANT_KMS AND 
+	A.nro_motor = M.AUTO_NRO_MOTOR AND
+	A.pat_auto = M.AUTO_PATENTE 
+	WHERE M.TIPO_AUTO_CODIGO IS NOT NULL AND 
+	M.COMPRA_NRO IS NOT NULL
+    GROUP BY C.cod_compra, A.cod_auto, M.COMPRA_FECHA, M.COMPRA_PRECIO
+END
+
+CREATE PROCEDURE ProcedimientoComprasAuto
+AS
+BEGIN
+    EXEC CrearComprasAuto
+    EXEC AgregarKeyComprasAuto
+    EXEC CargarComprasAuto
+END
+
+EXEC ProcedimientoComprasAuto
+
+SELECT * FROM ComprasAuto
+
+DROP TABLE ComprasAuto
+DROP PROCEDURE CrearComprasAuto
+DROP PROCEDURE AgregarKeyComprasAuto
+DROP PROCEDURE CargarComprasAuto
+DROP PROCEDURE ProcedimientoComprasAuto
+
+
+
+
+--------------------------------------
+--		  COMPRAS AUTOPARTE		    --
+--------------------------------------
+
+CREATE PROCEDURE CrearComprasAutoparte
+AS
+SET NOCOUNT ON 
+BEGIN
+    CREATE TABLE ComprasAutoparte(
+        id_compra_autoparte bigint identity(1,1) PRIMARY KEY,
+		cod_compra_autoparte bigint,
+        cod_autoparte decimal(18,0),
+		cant_compra_autoparte bigint
+    )
+END
+
+CREATE PROCEDURE AgregarKeyComprasAutoparte
+AS
+BEGIN
+    ALTER TABLE ComprasAutoparte ADD FOREIGN KEY (cod_compra_autoparte) REFERENCES Compras(cod_compra)
+    ALTER TABLE ComprasAutoparte ADD FOREIGN KEY (cod_autoparte) REFERENCES Autopartes(cod_autoparte)
+END
+
+CREATE PROCEDURE CargarComprasAutoparte
+AS
+SET NOCOUNT ON
+BEGIN
+    INSERT INTO ComprasAutoparte(cod_compra_autoparte, cod_autoparte)
+    SELECT C.cod_compra, A.cod_autoparte
+    FROM gd_esquema.Maestra M
+    LEFT JOIN Compras C ON 
+	C.nro_compra = M.COMPRA_NRO
+    LEFT JOIN Autopartes A ON 
+	A.cod_autoparte = M.AUTO_PARTE_CODIGO AND 
+	A.desc_autoparte = M.AUTO_PARTE_DESCRIPCION
+	WHERE M.AUTO_PARTE_CODIGO IS NOT NULL AND 
+	M.COMPRA_NRO IS NOT NULL
+    GROUP BY C.cod_compra, A.cod_autoparte
+END
+
+select AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION from gd_esquema.Maestra where AUTO_PARTE_CODIGO is not null group by AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION 
+
+select * from compras
+
+select * from gd_esquema.Maestra
+
+CREATE PROCEDURE ProcedimientoComprasAutoparte
+AS
+BEGIN
+    EXEC CrearComprasAutoparte
+    EXEC AgregarKeyComprasAutoparte
+    EXEC CargarComprasAutoparte
+END
+
+EXEC ProcedimientoComprasAutoparte
+
+SELECT * FROM ComprasAutoparte
+
+DROP TABLE ComprasAutoparte
+DROP PROCEDURE CrearComprasAutoparte
+DROP PROCEDURE AgregarKeyComprasAutoparte
+DROP PROCEDURE CargarComprasAutoparte
+DROP PROCEDURE ProcedimientoComprasAutoparte
