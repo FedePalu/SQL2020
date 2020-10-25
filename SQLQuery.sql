@@ -18,10 +18,10 @@ ADD cod_motor bigint identity(1,1) PRIMARY KEY;
 drop table Motores
 
 create table Motores (
-	cod_motor bigint identity(1,1) PRIMARY KEY,
+	--cod_motor bigint identity(1,1) PRIMARY KEY,
+	nro_motor nvarchar(50) PRIMARY KEY,
 	tipo_motor int,
-	pot_motor int,
-	nro_motor nvarchar(50)
+	pot_motor int
 );
 
 
@@ -33,7 +33,8 @@ SELECT
    TIPO_AUTO_DESC as desc_auto,
    AUTO_FECHA_ALTA as fecha_alta_auto,
    AUTO_CANT_KMS as kms_auto,
-   AUTO_PATENTE as pat_auto
+   AUTO_PATENTE as pat_auto,
+   MODELO_CODIGO as cod_modelo
 INTO 
     Autos
 FROM    
@@ -44,10 +45,14 @@ where
 ALTER TABLE Autos
 ADD PRIMARY KEY (num_chasis);
 
+ALTER TABLE autos ADD CONSTRAINT fk_modelo FOREIGN KEY (cod_modelo) REFERENCES Modelos(cod_modelo);
+
 ALTER TABLE Autos
 ALTER COLUMN num_chasis nvarchar(50) not null;
 
 drop table autos
+
+select * from autos
 
 ALTER TABLE autos
 ADD id_auto bigint identity(1,1) PRIMARY KEY;
@@ -67,18 +72,44 @@ create table Autos (
 	cod_modelo decimal(18,0) FOREIGN KEY REFERENCES Modelos(cod_modelo)
 );
 
+CREATE PROCEDURE CargarTablaAutos
+AS
+BEGIN
+SET	NOCOUNT ON;
+	INSERT INTO Autos(num_chasis, cod_auto, desc_auto, fecha_alta_auto,kms_auto,pat_auto)
+	VALUES( 
+	(SELECT AUTO_NRO_CHASIS 
+		FROM gd_esquema.Maestra),
+	(SELECT TIPO_AUTO_CODIGO
+		FROM gd_esquema.Maestra),
+	(SELECT TIPO_AUTO_DESC
+		FROM gd_esquema.Maestra),
+	(SELECT AUTO_FECHA_ALTA 
+		FROM gd_esquema.Maestra),
+	(SELECT AUTO_CANT_KMS
+		FROM gd_esquema.Maestra),
+	(SELECT AUTO_PATENTE
+		FROM gd_esquema.Maestra)
+	)
+END
+
+select * from autos
+
+EXEC CargarTablaAutos
+
 --			MODELOS			--	
 
 SELECT
    MODELO_NOMBRE as nom_modelo,
    FABRICANTE_NOMBRE as fabr_modelo,
-   AUTO_NRO_CHASIS as prueba
+    as 
+
 INTO 
     Modelos
 FROM    
     gd_esquema.Maestra
 
-select * from motores
+select * from modelos
 
 drop table modelos
 
@@ -97,7 +128,6 @@ create table Modelos (
 	cod_motor bigint FOREIGN KEY REFERENCES Motores(cod_motor) 
 );
 --FALTA AGREGAR FOREIGN KEY EN cod_caja--
-
 
 --			AUTOPARTES			--	
 select AUTO_PARTE_CODIGO from gd_esquema.Maestra
@@ -207,3 +237,201 @@ WHERE SUCURSAL_MAIL = 'Sucursal N°8@gmail.com'
 		AND SUCURSAL_CIUDAD = 'Los Polvorines'
 		AND SUCURSAL_DIRECCION = 'Lavalle9510'
 		AND CLIENTE_DNI = 62177881
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------
+
+
+
+
+
+--		SUCURSAL		--
+
+CREATE TABLE Sucursales(
+	cod_suc bigint identity(1,1) PRIMARY KEY NOT NULL,
+	mail_suc nvarchar(255),
+	tel_suc decimal(18,0),
+	ciu_suc nvarchar(255),
+	dir_suc nvarchar(255)
+)
+
+INSERT INTO Sucursales (mail_suc, tel_suc, ciu_suc, dir_suc)
+SELECT SUCURSAL_MAIL, SUCURSAL_TELEFONO, SUCURSAL_CIUDAD, SUCURSAL_DIRECCION
+FROM gd_esquema.Maestra
+WHERE SUCURSAL_MAIL is not null
+GROUP BY SUCURSAL_MAIL, SUCURSAL_TELEFONO, SUCURSAL_CIUDAD, SUCURSAL_DIRECCION
+
+select * from sucursales
+
+drop table sucursales
+
+CREATE PROCEDURE CargarTablaSucursales
+AS
+BEGIN
+SET	NOCOUNT ON;
+	SELECT
+   SUCURSAL_MAIL as mail_suc,
+   SUCURSAL_TELEFONO as tel_suc,
+   SUCURSAL_CIUDAD as ciu_suc,
+   SUCURSAL_DIRECCION as dir_suc
+INTO 
+    Sucursales
+FROM    
+    gd_esquema.Maestra	
+WHERE
+SUCURSAL_MAIL is not null
+END
+
+drop procedure CargarTablaSucursales
+
+CREATE PROCEDURE AgregarPKSucursales
+AS
+BEGIN
+ALTER TABLE sucursales
+ADD cod_suc bigint identity(1,1) PRIMARY KEY;
+END
+
+CREATE PROCEDURE CrearSucursales
+AS
+BEGIN
+EXEC CargarTablaSucursales
+EXEC AgregarPKSucursales
+END
+
+EXEC CrearSucursales
+
+drop table sucursales
+
+select * from sucursales
+
+ALTER TABLE sucursales
+ADD cod_suc bigint identity(1,1) PRIMARY KEY;
+
+
+
+
+--		CLIENTES		--
+
+CREATE TABLE Clientes(
+	cod_clie bigint identity(1,1) PRIMARY KEY NOT NULL,
+	nom_clie nvarchar(255),
+	ape_clie nvarchar(255),
+	dir_clie nvarchar(255),
+	nac_clie datetime2(3),
+	mail_clie nvarchar(255),
+	dni_clie decimal(18,0),
+)
+
+
+INSERT INTO Clientes (nom_clie, ape_clie, dir_clie, nac_clie, mail_clie, dni_clie)
+SELECT CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
+FROM gd_esquema.Maestra
+WHERE CLIENTE_DNI is not null and
+FAC_CLIENTE_DNI is not null
+GROUP BY CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
+
+select * from clientes
+
+drop table clientes
+
+CREATE PROCEDURE CargarClientes
+AS
+BEGIN
+SET	NOCOUNT ON;
+	SELECT
+   CLIENTE_NOMBRE as nom_clie,
+   CLIENTE_APELLIDO as ape_clie,
+   CLIENTE_DIRECCION as dir_clie,
+   CLIENTE_FECHA_NAC as nac_clie,
+   CLIENTE_MAIL as mail_clie,
+   CLIENTE_DNI as dni_clie
+INTO 
+    Clientes
+FROM    
+    gd_esquema.Maestra
+WHERE
+CLIENTE_DNI is not null;
+END
+
+drop procedure CargarClientes
+
+CREATE PROCEDURE AgregarPKClientes
+AS
+BEGIN
+ALTER TABLE Clientes
+ADD cod_clie bigint identity(1,1) PRIMARY KEY;
+END
+
+CREATE PROCEDURE CrearClientes
+AS
+BEGIN
+EXEC CargarClientes
+EXEC AgregarPKClientes
+END
+
+EXEC CrearClientes
+
+drop table clientes
+
+select * from clientes
+
+
+--		FACTURAS		--
+
+CREATE PROCEDURE CrearFacturas
+AS
+BEGIN
+SET	NOCOUNT ON;
+CREATE TABLE Facturas(
+	cod_fac bigint identity(1,1) PRIMARY KEY NOT NULL,
+	nro_fac decimal(18,0),
+	precio_fac decimal(18,2),
+	fecha_fac datetime2(3),
+	fecha_clie_fac datetime2(3),
+	cod_clie bigint,
+	cod_suc bigint
+)
+END
+
+CREATE PROCEDURE CargarFacturas
+AS
+BEGIN
+SET	NOCOUNT ON;
+INSERT INTO Facturas (nro_fac, precio_fac, fecha_fac, fecha_clie_fac, cod_clie, cod_suc)
+SELECT M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
+FROM gd_esquema.Maestra M
+LEFT JOIN Clientes C on 
+C.nom_clie = M.CLIENTE_NOMBRE and
+C.ape_clie = M.CLIENTE_APELLIDO
+LEFT JOIN Sucursales S on S.mail_suc = M.FAC_SUCURSAL_MAIL
+WHERE M.FACTURA_NRO is not null and 
+M.PRECIO_FACTURADO is not null and
+M.FACTURA_FECHA is not null and
+M.CLIENTE_NOMBRE is not null and
+M.FAC_CLIENTE_FECHA_NAC is not null
+GROUP BY M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
+END
+
+CREATE PROCEDURE ProcedimientoFactura
+AS
+BEGIN
+SET NOCOUNT ON;
+EXEC CrearFacturas
+EXEC CargarFacturas
+END
+
+exec ProcedimientoFactura
+
+select * from facturas
