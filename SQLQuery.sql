@@ -229,8 +229,8 @@ BEGIN
 		cod_transmision decimal(18,0),
 		desc_transmision nvarchar(255),
 		desc_caja nvarchar(255),
-		tipo_caja decimal(18,0)
-		--cant_cambios? 
+		tipo_caja decimal(18,0),
+		cant_cambios bigint
 	)
 END
 
@@ -271,7 +271,6 @@ AS
 BEGIN
 	SET	NOCOUNT ON;
 	create table Modelos (
-		--cod_modelo bigint identity(1,1) ,
 		cod_modelo decimal(18,0) PRIMARY KEY,
 		nom_modelo nvarchar(255),
 		fabricante_modelo nvarchar(255),
@@ -605,7 +604,8 @@ SET NOCOUNT ON
 BEGIN
     CREATE TABLE FacturasAutoparte(
         cod_fac_autoparte bigint,
-        cod_autoparte decimal(18,0)
+        cod_autoparte decimal(18,0),
+		ciudad_origen nvarchar(255)
     )
 END
 
@@ -636,8 +636,6 @@ BEGIN
     GROUP BY F.cod_fac, A.cod_autoparte
 END
 
-select * from facturas
-
 CREATE PROCEDURE ProcedimientoFacturasAutoparte
 AS
 BEGIN
@@ -645,8 +643,6 @@ BEGIN
     EXEC AgregarKeyFacturasAutoparte
     EXEC CargarFacturasAutoparte
 END
-
-select * from gd_esquema.Maestra
 
 EXEC ProcedimientoFacturasAutoparte
 
@@ -683,6 +679,8 @@ BEGIN
     ALTER TABLE ComprasAuto ADD FOREIGN KEY (cod_compra_auto) REFERENCES Compras(cod_compra)
     ALTER TABLE ComprasAuto ADD FOREIGN KEY (cod_auto) REFERENCES Autos(cod_auto)
 END
+
+select * from gd_esquema.Maestra
 
 CREATE PROCEDURE CargarComprasAuto
 AS
@@ -767,12 +765,6 @@ BEGIN
     GROUP BY C.cod_compra, A.cod_autoparte
 END
 
-select AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION from gd_esquema.Maestra where AUTO_PARTE_CODIGO is not null group by AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION 
-
-select * from compras
-
-select * from gd_esquema.Maestra
-
 CREATE PROCEDURE ProcedimientoComprasAutoparte
 AS
 BEGIN
@@ -810,10 +802,24 @@ EXEC ProcedimientoFacturasAuto
 EXEC ProcedimientoFacturasAutoparte
 END
 
-drop table motores
-
-select * from Cajas_de_cambio
-
-
 EXEC MIgracionDeDatos
 
+CREATE PROCEDURE EliminarTablas
+AS
+BEGIN
+DROP TABLE FacturasAuto
+DROP TABLE FacturasAutoparte
+DROP TABLE Facturas
+DROP TABLE Clientes
+DROP TABLE ComprasAuto
+DROP TABLE ComprasAutoparte
+DROP TABLE Compras
+DROP TABLE Sucursales
+DROP TABLE Autos
+DROP TABLE Autopartes
+DROP TABLE Modelos
+DROP TABLE Motores
+DROP TABLE Cajas_de_cambio
+END
+
+EXEC EliminarTablas
