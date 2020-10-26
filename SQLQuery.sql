@@ -1,4 +1,33 @@
 USE GD2C2020
+GO
+
+/**
+## INTEGRANTES ##
+	
+	- Federico Palumbo			1674640		K3671
+
+	- Ignacio Garay				1680900		K3572		
+	
+	- Walter Barreiro			1674456		K3521		
+
+
+## PROCEDURES ##
+
+	1. CrearX: crea tabla con sus atributos
+
+	2. AsignarKeyX: asigna constraints tales como FK a los atributos de la tabla
+
+	3. CargarX: emigra los registros de la tabla maestra, cargándolos en la tabla indicada
+
+	4. ProcedimientoX: crea y carga una tabla de datos
+
+	5. MigracionDeDatos: ejecuta las creaciones y cargas de todas las tablas
+
+	6. EliminarTablas: dropea todas las tablas
+
+
+**/
+
 
 --------------------------
 --		SUCURSAL		--
@@ -16,8 +45,6 @@ BEGIN
 		dir_suc nvarchar(255)
 	)
 END
-GO
-
 
 CREATE PROCEDURE CargarSucursales
 AS
@@ -28,7 +55,6 @@ BEGIN
 	WHERE SUCURSAL_MAIL IS NOT NULL
 	GROUP BY SUCURSAL_MAIL, SUCURSAL_TELEFONO, SUCURSAL_CIUDAD, SUCURSAL_DIRECCION
 END
-GO
 
 CREATE PROCEDURE ProcedimientoSucursales
 AS
@@ -36,7 +62,6 @@ BEGIN
 	EXEC CrearSucursales
 	EXEC CargarSucursales
 END
-GO
 
 EXEC ProcedimientoSucursales
 
@@ -67,7 +92,6 @@ BEGIN
 		dni_clie decimal(18,0),
 	)
 END
-GO
 
 CREATE PROCEDURE CargarClientes1
 AS
@@ -78,7 +102,6 @@ BEGIN
 	WHERE CLIENTE_DNI IS NOT NULL
 	GROUP BY CLIENTE_NOMBRE, CLIENTE_APELLIDO, CLIENTE_DIRECCION, CLIENTE_FECHA_NAC, CLIENTE_MAIL, CLIENTE_DNI
 END
-GO
 
 CREATE PROCEDURE CargarClientes2
 AS
@@ -89,7 +112,6 @@ INSERT INTO Clientes (nom_clie, ape_clie, dir_clie, nac_clie, mail_clie, dni_cli
 	WHERE FAC_CLIENTE_DNI IS NOT NULL
 	GROUP BY FAC_CLIENTE_NOMBRE, FAC_CLIENTE_APELLIDO, FAC_CLIENTE_DIRECCION, FAC_CLIENTE_FECHA_NAC, FAC_CLIENTE_MAIL, FAC_CLIENTE_DNI
 END
-GO
 
 CREATE PROCEDURE ProcedimientoClientes
 AS
@@ -98,7 +120,6 @@ BEGIN
 	EXEC CargarClientes1
 	EXEC CargarClientes2
 END
-GO
 
 EXEC ProcedimientoClientes
 
@@ -130,7 +151,6 @@ BEGIN
 		cod_suc bigint
 	)
 END
-GO
 
 CREATE PROCEDURE AgregarKeysFacturas
 AS
@@ -138,7 +158,6 @@ BEGIN
 	ALTER TABLE Facturas add FOREIGN KEY (cod_suc) REFERENCES Sucursales(cod_suc)
 	ALTER TABLE Facturas add FOREIGN KEY (cod_clie) REFERENCES Clientes(cod_clie)
 END
-GO
 
 CREATE PROCEDURE CargarFacturas
 AS
@@ -157,7 +176,6 @@ BEGIN
 	M.FAC_CLIENTE_FECHA_NAC IS NOT NULL
 	GROUP BY M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 END
-GO
 
 CREATE PROCEDURE ProcedimientoFactura
 AS
@@ -167,7 +185,6 @@ BEGIN
 	EXEC AgregarKeysFacturas
 	EXEC CargarFacturas
 END
-GO
 
 EXEC ProcedimientoFactura
 
@@ -195,7 +212,6 @@ BEGIN
 		pot_motor decimal(18,0)
 	)
 END
-GO
 
 CREATE PROCEDURE CargarMotores
 AS
@@ -206,7 +222,6 @@ BEGIN
 	WHERE TIPO_MOTOR_CODIGO is not null
 	GROUP BY TIPO_MOTOR_CODIGO, MODELO_POTENCIA
 END
-GO
 
 CREATE PROCEDURE ProcedimientoMotores
 AS
@@ -214,7 +229,6 @@ BEGIN
 	EXEC CrearMotores
 	EXEC CargarMotores
 END
-GO
 
 EXEC ProcedimientoMotores
 
@@ -245,7 +259,6 @@ BEGIN
 		cant_cambios bigint
 	)
 END
-GO
 
 CREATE PROCEDURE CargarCajas
 AS
@@ -256,7 +269,6 @@ BEGIN
 	WHERE TIPO_CAJA_CODIGO IS NOT NULL
 	GROUP BY TIPO_TRANSMISION_CODIGO, TIPO_TRANSMISION_DESC, TIPO_CAJA_DESC, TIPO_CAJA_CODIGO
 END
-GO
 
 CREATE PROCEDURE ProcedimientoCajas
 AS
@@ -264,7 +276,6 @@ BEGIN
 	EXEC CrearCajas
 	EXEC CargarCajas
 END
-GO
 
 EXEC ProcedimientoCajas
 
@@ -293,7 +304,6 @@ BEGIN
 		cod_motor bigint 
 	)
 END
-GO
 
 SELECT * FROM gd_esquema.Maestra order by MODELO_CODIGO
 
@@ -305,7 +315,6 @@ BEGIN
 	ALTER TABLE Modelos add FOREIGN KEY (cod_caja) REFERENCES Cajas_de_cambio(cod_caja)
 	ALTER TABLE Modelos add FOREIGN KEY (cod_motor) REFERENCES Motores(cod_motor)
 END
-GO
 
 CREATE PROCEDURE CargarModelos
 AS
@@ -328,7 +337,6 @@ BEGIN
 	A.MODELO_CODIGO IS NOT NULL
 	GROUP BY A.MODELO_CODIGO, A.MODELO_NOMBRE, A.FABRICANTE_NOMBRE, C.cod_caja, M.cod_motor
 END
-GO
 
 CREATE PROCEDURE ProcedimientoModelos
 AS
@@ -337,7 +345,6 @@ BEGIN
 	EXEC AgregarKeysModelos
 	EXEC CargarModelos
 END
-GO
 
 EXEC ProcedimientoModelos
 
@@ -367,14 +374,12 @@ BEGIN
 		cod_suc bigint
 	)
 END
-GO
 
 CREATE PROCEDURE AgregarKeyCompras
 AS
 BEGIN
 	ALTER TABLE Compras add FOREIGN KEY (cod_suc) REFERENCES Sucursales(cod_suc)
 END
-GO
 
 CREATE PROCEDURE CargarCompras
 AS
@@ -387,7 +392,6 @@ BEGIN
 	WHERE M.COMPRA_NRO is not null 
 	GROUP BY M.COMPRA_NRO, S.cod_suc
 END
-GO
 
 CREATE PROCEDURE ProcedimientoCompra
 AS
@@ -396,7 +400,6 @@ BEGIN
 	EXEC AgregarKeyCompras
 	EXEC CargarCompras
 END
-GO
 
 EXEC ProcedimientoCompra
 
@@ -430,18 +433,12 @@ BEGIN
 		cod_modelo decimal(18,0)
 	)
 END
-GO
 
 CREATE PROCEDURE AgregarKeyAutos
 AS 
 BEGIN
 	ALTER TABLE Autos ADD FOREIGN KEY (cod_modelo) REFERENCES Modelos(cod_modelo)
 END
-GO
-
-select * from gd_esquema.Maestra
-
-select * from Modelos
 
 CREATE PROCEDURE CargarAutos	
 AS
@@ -463,7 +460,6 @@ BEGIN
 	Ma.AUTO_NRO_MOTOR is not null
 	GROUP BY Ma.AUTO_NRO_CHASIS, Ma.TIPO_AUTO_CODIGO, Ma.TIPO_AUTO_DESC, Ma.AUTO_FECHA_ALTA, Ma.AUTO_CANT_KMS, Ma.AUTO_PATENTE, Ma.AUTO_NRO_MOTOR, Mo.cod_modelo
 END
-GO
 
 CREATE PROCEDURE ProcedimientoAutos
 AS 
@@ -472,7 +468,6 @@ BEGIN
 	EXEC AgregarKeyAutos
 	EXEC CargarAutos
 END
-GO
 
 EXEC ProcedimientoAutos
 
@@ -497,18 +492,16 @@ BEGIN
 	CREATE TABLE Autopartes(
 		cod_autoparte decimal(18,0) PRIMARY KEY,
 		desc_autoparte nvarchar(255),
-		precio_autoparte decimal(18,2),
+		precio_autoparte decimal(18,2), -- Pedido en el enunciado
 		cod_modelo decimal(18,0)
 	)
 END
-GO
 
 CREATE PROCEDURE AgregarKeyAutopartes
 AS
 BEGIN
 	ALTER TABLE Autopartes ADD FOREIGN KEY (cod_modelo) REFERENCES Modelos(cod_modelo)
 END
-GO
 
 CREATE PROCEDURE CargarAutopartes
 AS
@@ -524,7 +517,6 @@ BEGIN
 	WHERE Ma.AUTO_PARTE_CODIGO IS NOT NULL
 	GROUP BY Ma.AUTO_PARTE_CODIGO, Ma.AUTO_PARTE_DESCRIPCION, Mo.cod_modelo
 END
-GO
 
 CREATE PROCEDURE ProcedimientoAutopartes
 AS 
@@ -533,7 +525,6 @@ BEGIN
 	EXEC AgregarKeyAutopartes
 	EXEC CargarAutopartes
 END
-GO
 
 EXEC ProcedimientoAutopartes
 
@@ -561,7 +552,6 @@ BEGIN
         cod_auto bigint
     )
 END
-GO
 
 CREATE PROCEDURE AgregarKeyFacturasAuto
 AS
@@ -569,7 +559,6 @@ BEGIN
     ALTER TABLE FacturasAuto ADD FOREIGN KEY (cod_fac_auto) REFERENCES Facturas(cod_fac)
     ALTER TABLE FacturasAuto ADD FOREIGN KEY (cod_auto) REFERENCES Autos(cod_auto)
 END
-GO
 
 CREATE PROCEDURE CargarFacturasAuto
 AS
@@ -595,7 +584,6 @@ BEGIN
 	M.FACTURA_NRO IS NOT NULL
     GROUP BY F.cod_fac, A.cod_auto
 END
-GO
 
 CREATE PROCEDURE ProcedimientoFacturasAuto
 AS
@@ -604,7 +592,6 @@ BEGIN
     EXEC AgregarKeyFacturasAuto
     EXEC CargarFacturasAuto
 END
-GO
 
 EXEC ProcedimientoFacturasAuto
 
@@ -628,12 +615,13 @@ AS
 SET NOCOUNT ON 
 BEGIN
     CREATE TABLE FacturasAutoparte(
-        cod_fac_autoparte bigint,
+        id_fac_autoparte bigint identity(1,1) PRIMARY KEY,
+		cod_fac_autoparte bigint,
         cod_autoparte decimal(18,0),
-		ciudad_origen nvarchar(255)
+		cant_autopartes bigint, -- Pedida en el enunciado
+		ciudad_origen nvarchar(255) -- Pedida en el enunciado
     )
 END
-GO
 
 CREATE PROCEDURE AgregarKeyFacturasAutoparte
 AS
@@ -641,7 +629,6 @@ BEGIN
     ALTER TABLE FacturasAutoparte ADD FOREIGN KEY (cod_fac_autoparte) REFERENCES Facturas(cod_fac)
     ALTER TABLE FacturasAutoparte ADD FOREIGN KEY (cod_autoparte) REFERENCES Autopartes(cod_autoparte)
 END
-GO
 
 CREATE PROCEDURE CargarFacturasAutoparte
 AS
@@ -662,7 +649,6 @@ BEGIN
 	M.FACTURA_NRO IS NOT NULL
     GROUP BY F.cod_fac, A.cod_autoparte
 END
-GO
 
 CREATE PROCEDURE ProcedimientoFacturasAutoparte
 AS
@@ -671,7 +657,6 @@ BEGIN
     EXEC AgregarKeyFacturasAutoparte
     EXEC CargarFacturasAutoparte
 END
-GO
 
 EXEC ProcedimientoFacturasAutoparte
 
@@ -701,7 +686,6 @@ BEGIN
 		precio_compra_auto decimal(18,2)
     )
 END
-GO
 
 CREATE PROCEDURE AgregarKeyComprasAuto
 AS
@@ -709,9 +693,6 @@ BEGIN
     ALTER TABLE ComprasAuto ADD FOREIGN KEY (cod_compra_auto) REFERENCES Compras(cod_compra)
     ALTER TABLE ComprasAuto ADD FOREIGN KEY (cod_auto) REFERENCES Autos(cod_auto)
 END
-GO
-
-select * from gd_esquema.Maestra
 
 CREATE PROCEDURE CargarComprasAuto
 AS
@@ -734,7 +715,6 @@ BEGIN
 	M.COMPRA_NRO IS NOT NULL
     GROUP BY C.cod_compra, A.cod_auto, M.COMPRA_FECHA, M.COMPRA_PRECIO
 END
-GO
 
 CREATE PROCEDURE ProcedimientoComprasAuto
 AS
@@ -743,7 +723,6 @@ BEGIN
     EXEC AgregarKeyComprasAuto
     EXEC CargarComprasAuto
 END
-GO
 
 EXEC ProcedimientoComprasAuto
 
@@ -773,7 +752,6 @@ BEGIN
 		cant_compra_autoparte bigint
     )
 END
-GO
 
 CREATE PROCEDURE AgregarKeyComprasAutoparte
 AS
@@ -781,7 +759,6 @@ BEGIN
     ALTER TABLE ComprasAutoparte ADD FOREIGN KEY (cod_compra_autoparte) REFERENCES Compras(cod_compra)
     ALTER TABLE ComprasAutoparte ADD FOREIGN KEY (cod_autoparte) REFERENCES Autopartes(cod_autoparte)
 END
-GO
 
 CREATE PROCEDURE CargarComprasAutoparte
 AS
@@ -799,7 +776,6 @@ BEGIN
 	M.COMPRA_NRO IS NOT NULL
     GROUP BY C.cod_compra, A.cod_autoparte
 END
-GO
 
 CREATE PROCEDURE ProcedimientoComprasAutoparte
 AS
@@ -808,7 +784,6 @@ BEGIN
     EXEC AgregarKeyComprasAutoparte
     EXEC CargarComprasAutoparte
 END
-GO
 
 EXEC ProcedimientoComprasAutoparte
 
@@ -820,6 +795,7 @@ DROP PROCEDURE AgregarKeyComprasAutoparte
 DROP PROCEDURE CargarComprasAutoparte
 DROP PROCEDURE ProcedimientoComprasAutoparte
 
+-----------------------------------------------------------
 
 CREATE PROCEDURE MigracionDeDatos
 AS
@@ -838,9 +814,9 @@ EXEC ProcedimientoFactura
 EXEC ProcedimientoFacturasAuto
 EXEC ProcedimientoFacturasAutoparte
 END
-GO
 
 EXEC MigracionDeDatos
+
 
 CREATE PROCEDURE EliminarTablas
 AS
@@ -859,7 +835,5 @@ DROP TABLE Modelos
 DROP TABLE Motores
 DROP TABLE Cajas_de_cambio
 END
-
-SELECT * from facturasauto
 
 EXEC EliminarTablas
