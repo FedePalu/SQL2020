@@ -925,9 +925,13 @@ DROP PROCEDURE [ESECUELE].MigracionDeDatos
 
 GO
 
+
+
 ----------------------------------------------
 --			ELIMINAR PROCEDIMIENTOS			--
 ----------------------------------------------
+
+/*
 
 CREATE PROCEDURE [ESECUELE].EliminarTodo
 AS
@@ -949,13 +953,14 @@ END
 
 GO 
 
+EXEC [ESECUELE].EliminarTodo
+
+GO
+
 DROP PROCEDURE [ESECUELE].EliminarTodo
 
 GO
 
-EXEC [ESECUELE].EliminarTodo
-
-GO
 
 CREATE PROCEDURE [ESECUELE].EliminarProcedimientosRestantes
 AS
@@ -982,3 +987,5 @@ EXEC [ESECUELE].EliminarProcedimientosRestantes
 GO
 
 DROP PROCEDURE [ESECUELE].EliminarProcedimientosRestantes
+
+*/
