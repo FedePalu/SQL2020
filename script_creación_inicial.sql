@@ -32,11 +32,11 @@ GO
 --------------------------------------
 --			CREACIÓN SCHEMA			--
 --------------------------------------
-
+/*
 GO
 	CREATE SCHEMA [ESECUELE]
 GO
-
+*/
 --------------------------
 --		SUCURSAL		--
 --------------------------
@@ -156,6 +156,7 @@ END
 
 GO
 
+
 --------------------------
 --		FACTURAS		--
 --------------------------
@@ -206,7 +207,6 @@ END
 
 GO
 
-
 CREATE PROCEDURE [ESECUELE].CargarFacturas2
 AS
 BEGIN
@@ -217,15 +217,17 @@ BEGIN
 	LEFT JOIN [ESECUELE].Clientes C on 
 	C.dni_clie = M.FAC_CLIENTE_DNI
 	LEFT JOIN [ESECUELE].Sucursales S on S.mail_suc = M.FAC_SUCURSAL_MAIL
-	WHERE M.FACTURA_NRO IS NOT NULL AND
+	WHERE M.FACTURA_NRO IS NOT NULL AND 
 	M.PRECIO_FACTURADO IS NOT NULL AND
 	M.FACTURA_FECHA IS NOT NULL AND
-	M.CLIENTE_NOMBRE IS NOT NULL AND
-	M.FAC_CLIENTE_FECHA_NAC IS NOT NULL
+	--M.FAC_CLIENTE_NOMBRE IS NOT NULL AND
+	M.FAC_CLIENTE_FECHA_NAC IS NOT NULL AND
+	FAC_CLIENTE_DNI = '14791857'
 	GROUP BY M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 END
 
 GO
+
 
 
 CREATE PROCEDURE [ESECUELE].ProcedimientoFactura
@@ -725,7 +727,6 @@ BEGIN
 END
 
 GO
-SELECT * FROM FacturasAutoparte
 
 CREATE PROCEDURE [ESECUELE].AgregarKeyFacturasAutoparte
 AS
@@ -735,8 +736,6 @@ BEGIN
 END
 
 GO
-
-SELECT * FROM gd_esquema.Maestra
 
 CREATE PROCEDURE [ESECUELE].CargarFacturasAutoparte
 AS
@@ -787,12 +786,6 @@ GO
 --------------------------------------
 --			COMPRAS AUTO		    --
 --------------------------------------
-
-SELECT * FROM [ESECUELE].ComprasAuto
-
-SELECT * FROM gd_esquema.Maestra
-
-SELECT COMPRA_FECHA, TIPO_AUTO_DESC, AUTO_PARTE_DESCRIPCION, FACTURA_FECHA FROM gd_esquema.Maestra
 
 CREATE PROCEDURE [ESECUELE].CrearComprasAuto
 AS
@@ -970,9 +963,23 @@ GO
 ----------------------------------------------
 --			ELIMINAR PROCEDIMIENTOS			--
 ----------------------------------------------
-
-
 /*
+
+DROP TABLE [ESECUELE].ComprasAutoparte
+DROP TABLE [ESECUELE].ComprasAuto
+DROP TABLE [ESECUELE].FacturasAutoparte
+DROP TABLE [ESECUELE].FacturasAuto
+DROP TABLE [ESECUELE].Autopartes
+DROP TABLE [ESECUELE].Autos
+DROP TABLE [ESECUELE].Compras
+DROP TABLE [ESECUELE].Modelos
+DROP TABLE [ESECUELE].Cajas_de_cambio
+DROP TABLE [ESECUELE].Motores
+DROP TABLE [ESECUELE].Facturas
+DROP TABLE [ESECUELE].Clientes
+DROP TABLE [ESECUELE].Sucursales
+
+
 CREATE PROCEDURE [ESECUELE].EliminarTodo
 AS
 BEGIN
