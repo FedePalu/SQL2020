@@ -133,6 +133,7 @@ END
 
 GO
 
+
 CREATE PROCEDURE [ESECUELE].ProcedimientoClientes
 AS
 BEGIN
@@ -185,7 +186,7 @@ END
 
 GO
 
-CREATE PROCEDURE [ESECUELE].CargarFacturas
+CREATE PROCEDURE [ESECUELE].CargarFacturas1
 AS
 BEGIN
 	SET	NOCOUNT ON;
@@ -193,7 +194,7 @@ BEGIN
 	SELECT M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 	FROM gd_esquema.Maestra M
 	LEFT JOIN [ESECUELE].Clientes C on 
-	C.dni_clie = M.CLIENTE_DNI
+	C.dni_clie = M.CLIENTE_DNI 
 	LEFT JOIN [ESECUELE].Sucursales S on S.mail_suc = M.FAC_SUCURSAL_MAIL
 	WHERE M.FACTURA_NRO IS NOT NULL AND
 	M.PRECIO_FACTURADO IS NOT NULL AND
@@ -205,13 +206,36 @@ END
 
 GO
 
+
+CREATE PROCEDURE [ESECUELE].CargarFacturas2
+AS
+BEGIN
+	SET	NOCOUNT ON;
+	INSERT INTO [ESECUELE].Facturas (nro_fac, precio_fac, fecha_fac, fecha_clie_fac, cod_clie, cod_suc)
+	SELECT M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
+	FROM gd_esquema.Maestra M
+	LEFT JOIN [ESECUELE].Clientes C on 
+	C.dni_clie = M.FAC_CLIENTE_DNI
+	LEFT JOIN [ESECUELE].Sucursales S on S.mail_suc = M.FAC_SUCURSAL_MAIL
+	WHERE M.FACTURA_NRO IS NOT NULL AND
+	M.PRECIO_FACTURADO IS NOT NULL AND
+	M.FACTURA_FECHA IS NOT NULL AND
+	M.CLIENTE_NOMBRE IS NOT NULL AND
+	M.FAC_CLIENTE_FECHA_NAC IS NOT NULL
+	GROUP BY M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
+END
+
+GO
+
+
 CREATE PROCEDURE [ESECUELE].ProcedimientoFactura
 AS
 BEGIN
 	SET NOCOUNT ON;
 	EXEC [ESECUELE].CrearFacturas
 	EXEC [ESECUELE].AgregarKeysFacturas
-	EXEC [ESECUELE].CargarFacturas
+	EXEC [ESECUELE].CargarFacturas1
+	EXEC [ESECUELE].CargarFacturas2
 END
 
 GO
@@ -222,7 +246,8 @@ BEGIN
 	DROP TABLE [ESECUELE].Facturas
 	DROP PROCEDURE [ESECUELE].CrearFacturas
 	DROP PROCEDURE [ESECUELE].AgregarKeysFacturas
-	DROP PROCEDURE [ESECUELE].CargarFacturas
+	DROP PROCEDURE [ESECUELE].CargarFacturas1
+	DROP PROCEDURE [ESECUELE].CargarFacturas2
 	DROP PROCEDURE [ESECUELE].ProcedimientoFactura
 END
 
@@ -614,7 +639,7 @@ AS
 SET NOCOUNT ON 
 BEGIN
     CREATE TABLE [ESECUELE].FacturasAuto(
-        cod_fac_auto bigint PRIMARY KEY,
+        cod_fac_auto bigint,
         cod_auto bigint
     )
 END
@@ -629,6 +654,7 @@ BEGIN
 END
 
 GO
+
 
 CREATE PROCEDURE [ESECUELE].CargarFacturasAuto
 AS
@@ -653,6 +679,8 @@ BEGIN
     WHERE M.TIPO_AUTO_CODIGO IS NOT NULL AND 
 	M.FACTURA_NRO IS NOT NULL
     GROUP BY F.cod_fac, A.cod_auto
+	ORDER BY cod_auto
+
 END
 
 GO
@@ -697,6 +725,7 @@ BEGIN
 END
 
 GO
+SELECT * FROM FacturasAutoparte
 
 CREATE PROCEDURE [ESECUELE].AgregarKeyFacturasAutoparte
 AS
@@ -706,6 +735,8 @@ BEGIN
 END
 
 GO
+
+SELECT * FROM gd_esquema.Maestra
 
 CREATE PROCEDURE [ESECUELE].CargarFacturasAutoparte
 AS
@@ -728,6 +759,8 @@ BEGIN
 END
 
 GO
+
+
 
 CREATE PROCEDURE [ESECUELE].ProcedimientoFacturasAutoparte
 AS
@@ -927,12 +960,13 @@ GO
 
 
 
+
 ----------------------------------------------
 --			ELIMINAR PROCEDIMIENTOS			--
 ----------------------------------------------
 
-/*
 
+/*
 CREATE PROCEDURE [ESECUELE].EliminarTodo
 AS
 BEGIN
