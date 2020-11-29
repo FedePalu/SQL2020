@@ -220,9 +220,10 @@ GO
 
 
 
---------------------------------------
---	   DIMENSION CLIENTES AUTO		--
---------------------------------------
+----------------------------------
+--	   DIMENSION MODELOS		--
+----------------------------------
+
 select * from [ESECUELE].Modelos
 
 ALTER PROCEDURE [ESECUELE].CrearModeloBI
@@ -264,3 +265,49 @@ EXEC [ESECUELE].AgregarKeyDimModelo
 EXEC [ESECUELE].CargarModeloBI
 
 select * from [ESECUELE].BI_DIM_MODELO 
+
+
+----------------------------------
+--	   DIMENSION SUCURSALES		--
+----------------------------------
+
+
+ALTER PROCEDURE [ESECUELE].CrearSucursalBI
+AS
+BEGIN
+	CREATE TABLE [ESECUELE].BI_DIM_SUCRUSAL(
+		cod_suc bigint identity(1,1),
+		mail_suc nvarchar(255),
+		tel_suc decimal(18,0),
+		ciu_suc nvarchar(255),
+		dir_suc nvarchar(255)
+	)
+
+END
+
+ALTER PROCEDURE [ESECUELE].AgregarKeyDimSucursal
+AS 
+BEGIN
+	ALTER TABLE [ESECUELE].BI_DIM_SUCURSAL ADD FOREIGN KEY (cod_suc) REFERENCES [ESECUELE].Sucursales(cod_suc)
+END
+
+GO
+
+CREATE PROCEDURE [ESECUELE].CargarSucursalBI
+AS
+BEGIN
+	INSERT INTO [ESECUELE].BI_DIM_SUCURSAL(cod_suc, mail_suc, tel_suc, ciu_suc, dir_suc)
+	SELECT S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc
+	FROM [ESECUELE].Sucursales S
+	GROUP BY S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc
+END
+
+DROP TABLE [ESECUELE].BI_DIM_SUCURSAL
+
+EXEC [ESECUELE].CrearSucursalBI
+
+EXEC [ESECUELE].AgregarKeyDimSucursal
+
+EXEC [ESECUELE].CargarSucursalBI
+
+select * from [ESECUELE].BI_DIM_SUCURSAL 

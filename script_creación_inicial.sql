@@ -788,6 +788,12 @@ GO
 --			COMPRAS AUTO		    --
 --------------------------------------
 
+SELECT * FROM [ESECUELE].ComprasAuto
+
+SELECT * FROM gd_esquema.Maestra
+
+SELECT COMPRA_FECHA, TIPO_AUTO_DESC, AUTO_PARTE_DESCRIPCION, FACTURA_FECHA FROM gd_esquema.Maestra
+
 CREATE PROCEDURE [ESECUELE].CrearComprasAuto
 AS
 SET NOCOUNT ON 
