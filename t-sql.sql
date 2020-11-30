@@ -29,21 +29,23 @@ BEGIN
 		tipo_motor decimal(18,0),
 		cod_transmision decimal(18,0),
 		cod_modelo decimal(18,0),
-		pot_motor nvarchar(255) --VER
+		pot_motor nvarchar(255) 
 	)
 
 END
 
-ALTER PROCEDURE [ESECUELE].AgregarKeyDimAuto
+/*
+CRAETE PROCEDURE [ESECUELE].AgregarKeyDimAuto
 AS 
 BEGIN
 	ALTER TABLE [ESECUELE].BI_DIM_AUTO ADD FOREIGN KEY (cod_auto) REFERENCES [ESECUELE].Autos(cod_auto)
 END
-
 GO
+*/
 
+select * from [ESECUELE].motores
 
-ALTER PROCEDURE [ESECUELE].CargarCajasBI --CAMBIAR NOMBRE
+CREATE PROCEDURE [ESECUELE].CargarAutosBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_DIM_AUTO(tipo_auto, tipo_caja, cant_cambios, tipo_motor, cod_transmision, cod_modelo)
@@ -59,11 +61,8 @@ BEGIN
 END
 GO
 
-DROP PROCEDURE [ESECUELE].CargarCajasBI
-GO
 
-
-ALTER PROCEDURE [ESECUELE].AtualizarPotenciaBI
+CREATE PROCEDURE [ESECUELE].ActualizarPotenciaBI
 AS
 BEGIN
 	DECLARE @potencia decimal(18,0)
@@ -101,8 +100,6 @@ BEGIN
 
 	CLOSE cursor_autos
 	DEALLOCATE cursor_autos
-	
-	--ALTER TABLE [ESECUELE].BI_DIM_AUTO group by *
 
 END
 GO
@@ -111,212 +108,97 @@ DROP TABLE [ESECUELE].BI_DIM_AUTO
 
 EXEC [ESECUELE].CrearAutosBI
 
-EXEC [ESECUELE].AgregarKeyDimAuto
+-- EXEC [ESECUELE].AgregarKeyDimAuto
 
-EXEC [ESECUELE].CargarCajasBI
+EXEC [ESECUELE].CargarAutosBI
 
 select * from [ESECUELE].BI_DIM_AUTO 
 
-EXEC [ESECUELE].AtualizarPotenciaBI
+EXEC [ESECUELE].ActualizarPotenciaBI
 
 
 --------------------------------------
---	   DIMENSION CLIENTES AUTO		--
+--		DIMENSION CLIENTES			--
 --------------------------------------
 
 
-ALTER PROCEDURE [ESECUELE].CrearClientesAutoBI
+CREATE PROCEDURE [ESECUELE].CrearClientesBI
 AS
 BEGIN
-	CREATE TABLE [ESECUELE].BI_DIM_CLIE_AUTO(
-		id_clie_auto bigint identity(1,1) PRIMARY KEY,
-		cod_clie  BIGINT,
+	CREATE TABLE [ESECUELE].BI_DIM_CLIE(
+		cod_clie  BIGINT PRIMARY KEY,
 		clie_edad nvarchar(255),
 		clie_sexo nvarchar(255),
-		cod_auto bigint
 	)
 
 END
 
-
-ALTER PROCEDURE [ESECUELE].AgregarKeyDimClieAuto
+/*
+CREATE PROCEDURE [ESECUELE].AgregarKeyDimClieAuto
 AS 
 BEGIN
 	ALTER TABLE [ESECUELE].BI_DIM_CLIE_AUTO ADD FOREIGN KEY (cod_clie) REFERENCES [ESECUELE].Clientes(cod_clie)
-	ALTER TABLE [ESECUELE].BI_DIM_CLIE_AUTO ADD FOREIGN KEY (cod_auto) REFERENCES [ESECUELE].Autos(cod_auto)
 END
-
 GO
+*/
 
-
-CREATE PROCEDURE [ESECUELE].CargarClientesAutoJovenesBI
+CREATE PROCEDURE [ESECUELE].CargarClientesJovenesBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_CLIE_AUTO(cod_clie, clie_edad, cod_auto)
-	SELECT C.cod_clie, '18-30', A.cod_auto 
-	FROM [ESECUELE].FacturasAuto FA
-	INNER JOIN [ESECUELE].Facturas F ON
-	FA.cod_fac_auto = F.cod_fac
+	INSERT INTO [ESECUELE].BI_DIM_CLIE(cod_clie, clie_edad)
+	SELECT C.cod_clie, '18-30'
+	FROM [ESECUELE].Facturas F
 	JOIN [ESECUELE].Clientes C ON
-	F.cod_clie = C.cod_clie
-	JOIN [ESECUELE].Autos A ON
-	A.cod_auto = FA.cod_auto
-	WHERE YEAR(GETDATE()) - YEAR(C.nac_clie)
-	BETWEEN 18 AND 30
-	GROUP BY C.cod_clie, A.cod_auto
-END
-GO
-
-CREATE PROCEDURE [ESECUELE].CargarClientesAutoMedianosBI
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_CLIE_AUTO(cod_clie, clie_edad, cod_auto)
-	SELECT C.cod_clie, '31-50', A.cod_auto 
-	FROM [ESECUELE].FacturasAuto FA
-	INNER JOIN [ESECUELE].Facturas F ON
-	FA.cod_fac_auto = F.cod_fac
-	JOIN [ESECUELE].Clientes C ON
-	F.cod_clie = C.cod_clie
-	JOIN [ESECUELE].Autos A ON
-	A.cod_auto = FA.cod_auto
-	WHERE YEAR(GETDATE()) - YEAR(C.nac_clie)
-	BETWEEN 31 AND 50
-	GROUP BY C.cod_clie, A.cod_auto
-END
-GO
-
-
-CREATE PROCEDURE [ESECUELE].CargarClientesAutoViejosBI
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_CLIE_AUTO(cod_clie, clie_edad, cod_auto)
-	SELECT C.cod_clie, '>50', A.cod_auto 
-	FROM [ESECUELE].FacturasAuto FA
-	INNER JOIN [ESECUELE].Facturas F ON
-	FA.cod_fac_auto = F.cod_fac
-	JOIN [ESECUELE].Clientes C ON
-	F.cod_clie = C.cod_clie
-	JOIN [ESECUELE].Autos A ON
-	A.cod_auto = FA.cod_auto
-	WHERE YEAR(GETDATE()) - YEAR(C.nac_clie) > 50
-	GROUP BY C.cod_clie, A.cod_auto
-END
-GO
-
-
-DROP TABLE [ESECUELE].BI_DIM_CLIE_AUTO
-
-EXEC [ESECUELE].CrearClientesAutoBI
-
-EXEC [ESECUELE].AgregarKeyDimClieAuto
-
-EXEC [ESECUELE].CargarClientesAutoJovenesBI
-go
-EXEC [ESECUELE].CargarClientesAutoMedianosBI
-go
-EXEC [ESECUELE].CargarClientesAutoViejosBI
-go
-
-select * from [ESECUELE].BI_DIM_CLIE_AUTO 
-
-
---------------------------------------
---	 DIMENSION CLIENTES AUTOPARTE	--
---------------------------------------
-
-
-alter PROCEDURE [ESECUELE].CrearClientesAutoparteBI
-AS
-BEGIN
-	CREATE TABLE [ESECUELE].BI_DIM_CLIE_AUTOPARTE(
-		id_clie_autoparte bigint identity(1,1) PRIMARY KEY,
-		cod_clie  BIGINT,
-		clie_edad nvarchar(255),
-		clie_sexo nvarchar(255),
-		cod_autoparte decimal(18,0)
-	)
-
-END
-
-
-alter PROCEDURE [ESECUELE].AgregarKeyDimClieAutoparte
-AS 
-BEGIN
-	ALTER TABLE [ESECUELE].BI_DIM_CLIE_AUTOPARTE ADD FOREIGN KEY (cod_clie) REFERENCES [ESECUELE].Clientes(cod_clie)
-	ALTER TABLE [ESECUELE].BI_DIM_CLIE_AUTOPARTE ADD FOREIGN KEY (cod_autoparte) REFERENCES [ESECUELE].Autopartes(cod_autoparte)
-END
-
-GO
-
-
-CREATE PROCEDURE [ESECUELE].CargarClientesAutoparteJovenesBI
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_CLIE_AUTOPARTE(cod_clie, clie_edad, cod_autoparte)
-	SELECT C.cod_clie, '18-30', FA.cod_autoparte
-	FROM [ESECUELE].FacturasAutoparte FA
-	INNER JOIN [ESECUELE].Facturas F ON
-	FA.cod_fac_autoparte = F.cod_fac
-	inner JOIN [ESECUELE].Clientes C ON
 	F.cod_clie = C.cod_clie
 	WHERE YEAR(GETDATE()) - YEAR(C.nac_clie)
 	BETWEEN 18 AND 30
-	GROUP BY C.cod_clie, FA.cod_autoparte
+	GROUP BY C.cod_clie
 END
 GO
 
-CREATE PROCEDURE [ESECUELE].CargarClientesAutoparteMedianosBI
+CREATE PROCEDURE [ESECUELE].CargarClientesMedianosBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_CLIE_AUTOPARTE(cod_clie, clie_edad, cod_autoparte)
-	SELECT C.cod_clie, '31-50', FA.cod_autoparte
-	FROM [ESECUELE].FacturasAutoparte FA
-	INNER JOIN [ESECUELE].Facturas F ON
-	FA.cod_fac_autoparte = F.cod_fac
-	inner JOIN [ESECUELE].Clientes C ON
+	INSERT INTO [ESECUELE].BI_DIM_CLIE(cod_clie, clie_edad)
+	SELECT C.cod_clie, '31-50'
+	FROM [ESECUELE].Facturas F
+	JOIN [ESECUELE].Clientes C ON
 	F.cod_clie = C.cod_clie
 	WHERE YEAR(GETDATE()) - YEAR(C.nac_clie)
 	BETWEEN 31 AND 50
-	GROUP BY C.cod_clie, FA.cod_autoparte
+	GROUP BY C.cod_clie
 END
 GO
 
 
-CREATE PROCEDURE [ESECUELE].CargarClientesAutoparteViejosBI
+ALTER PROCEDURE [ESECUELE].CargarClientesViejosBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_CLIE_AUTOPARTE(cod_clie, clie_edad, cod_autoparte)
-	SELECT C.cod_clie, '>50', FA.cod_autoparte
-	FROM [ESECUELE].FacturasAutoparte FA
-	INNER JOIN [ESECUELE].Facturas F ON
-	FA.cod_fac_autoparte = F.cod_fac
-	inner JOIN [ESECUELE].Clientes C ON
+	INSERT INTO [ESECUELE].BI_DIM_CLIE(cod_clie, clie_edad)
+	SELECT C.cod_clie, '>50'
+	FROM [ESECUELE].Facturas F
+	JOIN [ESECUELE].Clientes C ON
 	F.cod_clie = C.cod_clie
 	WHERE YEAR(GETDATE()) - YEAR(C.nac_clie) > 50
-	GROUP BY C.cod_clie, FA.cod_autoparte
+	GROUP BY C.cod_clie
 END
 GO
 
 
+DROP TABLE [ESECUELE].BI_DIM_CLIE
 
+EXEC [ESECUELE].CrearClientesBI
 
-DROP TABLE [ESECUELE].BI_DIM_CLIE_AUTOPARTE
+-- EXEC [ESECUELE].AgregarKeyDimClieAuto
 
-EXEC [ESECUELE].CrearClientesAutoparteBI
-
-EXEC [ESECUELE].AgregarKeyDimClieAutoparte
-
-exec [ESECUELE].CargarClientesAutoparteJovenesBI
+EXEC [ESECUELE].CargarClientesJovenesBI
 go
-exec [ESECUELE].CargarClientesAutoparteMedianosBI
+EXEC [ESECUELE].CargarClientesMedianosBI
 go
-exec [ESECUELE].CargarClientesAutoparteViejosBI
+EXEC [ESECUELE].CargarClientesViejosBI
 go
 
-select * from [ESECUELE].BI_DIM_CLIE_AUTOPARTE
-
-
-
+select * from [ESECUELE].BI_DIM_CLIE 
 
 
 ----------------------------------
@@ -328,49 +210,30 @@ ALTER PROCEDURE [ESECUELE].CrearModeloBI
 AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_DIM_MODELO(
-		id_modelo bigint identity(1,1) PRIMARY KEY,
-		cod_mod  decimal(18,0),
+		cod_mod  decimal(18,0) PRIMARY KEY,
 		fabricante_mod nvarchar(255),
-		nom_modelo nvarchar(255),
-		cod_autoparte decimal(18,0),
-		cod_auto bigint
+		nom_modelo nvarchar(255)
 	)
 
 END
 
-
+/*
 ALTER PROCEDURE [ESECUELE].AgregarKeyDimModelo
 AS 
 BEGIN
 	ALTER TABLE [ESECUELE].BI_DIM_MODELO ADD FOREIGN KEY (cod_mod) REFERENCES [ESECUELE].Modelos(cod_modelo)
-	ALTER TABLE [ESECUELE].BI_DIM_MODELO ADD FOREIGN KEY (cod_auto) REFERENCES [ESECUELE].Autos(cod_auto)
-	ALTER TABLE [ESECUELE].BI_DIM_MODELO ADD FOREIGN KEY (cod_autoparte) REFERENCES [ESECUELE].Autopartes(cod_autoparte)
 END
 
 GO
+*/
 
-
-ALTER PROCEDURE [ESECUELE].CargarModeloAutoparteBI
+CREATE PROCEDURE [ESECUELE].CargarModeloBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_MODELO(cod_mod, fabricante_mod, nom_modelo, cod_autoparte)
-	SELECT M.cod_modelo, M.fabricante_modelo, m.nom_modelo, A.cod_autoparte
+	INSERT INTO [ESECUELE].BI_DIM_MODELO(cod_mod, fabricante_mod, nom_modelo)
+	SELECT M.cod_modelo, M.fabricante_modelo, m.nom_modelo
 	FROM [ESECUELE].Modelos M
-	JOIN [ESECUELE].Autopartes A ON
-	A.cod_modelo = M.cod_modelo
-	GROUP BY M.cod_modelo, M.fabricante_modelo, m.nom_modelo, A.cod_autoparte
-END
-GO
-
-CREATE PROCEDURE [ESECUELE].CargarModeloAutoBI
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_MODELO(cod_mod, fabricante_mod, nom_modelo, cod_auto)
-	SELECT M.cod_modelo, M.fabricante_modelo, m.nom_modelo, A.cod_auto
-	FROM [ESECUELE].Modelos M
-	JOIN [ESECUELE].Autos A ON
-	A.cod_modelo = M.cod_modelo
-	GROUP BY M.cod_modelo, M.fabricante_modelo, m.nom_modelo, A.cod_auto
+	GROUP BY M.cod_modelo, M.fabricante_modelo, m.nom_modelo
 END
 GO
 
@@ -379,264 +242,114 @@ DROP TABLE [ESECUELE].BI_DIM_MODELO
 
 EXEC [ESECUELE].CrearModeloBI
 
-EXEC [ESECUELE].AgregarKeyDimModelo
+--EXEC [ESECUELE].AgregarKeyDimModelo
 
-EXEC [ESECUELE].CargarModeloAutoparteBI
-
-EXEC [ESECUELE].CargarModeloAutoBI
+EXEC [ESECUELE].CargarModeloBI
 
 select * from [ESECUELE].BI_DIM_MODELO 
 
 
 ----------------------------------
---	DIMENSION SUCURSALX AUTOS	--
+--		DIMENSION SUCURSALX 	--
 ----------------------------------
 
 
-ALTER PROCEDURE [ESECUELE].CrearSucursalAutoBI
+CREATE PROCEDURE [ESECUELE].CrearSucursalBI
 AS
 BEGIN
-	CREATE TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTO(
-		id_suc BIGINT IDENTITY(1,1) PRIMARY KEY,
-		cod_suc bigint,
+	CREATE TABLE [ESECUELE].BI_DIM_SUCURSAL(
+		cod_suc bigint PRIMARY KEY,
 		mail_suc nvarchar(255),
 		tel_suc decimal(18,0),
 		ciu_suc nvarchar(255),
 		dir_suc nvarchar(255),
-		cod_auto bigint
 	)
 END
 GO
 
-CREATE PROCEDURE [ESECUELE].CargarSucursalAutoVentaBI
+CREATE PROCEDURE [ESECUELE].CargarSucursalBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_SUCURSAL_AUTO(cod_suc, mail_suc, tel_suc, ciu_suc, dir_suc, cod_auto)
-	SELECT S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc, FA.cod_auto
+	INSERT INTO [ESECUELE].BI_DIM_SUCURSAL(cod_suc, mail_suc, tel_suc, ciu_suc, dir_suc)
+	SELECT S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc
 	FROM [ESECUELE].Sucursales S
-	JOIN [ESECUELE].Facturas F ON
-	F.cod_suc = S.cod_suc
-	JOIN [ESECUELE].FacturasAuto FA ON
-	FA.cod_fac_auto = F.cod_fac
-	GROUP BY S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc, FA.cod_auto
+	GROUP BY S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc
 END
 GO
 
-CREATE PROCEDURE [ESECUELE].CargarSucursalAutoCompraBI
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_SUCURSAL_AUTO(cod_suc, mail_suc, tel_suc, ciu_suc, dir_suc, cod_auto)
-	SELECT S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc, CA.cod_auto
-	FROM [ESECUELE].Sucursales S
-	JOIN [ESECUELE].Compras C ON
-	C.cod_suc = S.cod_suc
-	JOIN [ESECUELE].ComprasAuto CA ON
-	CA.cod_compra_auto = C.cod_compra
-	GROUP BY S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc, CA.cod_auto
-END
-GO
-
-CREATE PROCEDURE [ESECUELE].AgregarKeyDimSucursalAuto
+/*
+DROP PROCEDURE [ESECUELE].AgregarKeyDimSucursalAuto
 AS 
 BEGIN
 	ALTER TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTO ADD FOREIGN KEY (cod_suc) REFERENCES [ESECUELE].Sucursales(cod_suc)
-	ALTER TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTO ADD FOREIGN KEY (cod_auto) REFERENCES [ESECUELE].Autos(cod_auto)
 END
 
 GO
+*/
 
 
+DROP TABLE [ESECUELE].BI_DIM_SUCURSAL
 
-DROP TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTO
+EXEC [ESECUELE].CrearSucursalBI
 
-EXEC [ESECUELE].CrearSucursalAutoBI
+-- EXEC [ESECUELE].AgregarKeyDimSucursal
 
-EXEC [ESECUELE].AgregarKeyDimSucursalAuto
+EXEC [ESECUELE].CargarSucursalBI
 
-EXEC [ESECUELE].CargarSucursalAutoVentaBI
-go
-EXEC [ESECUELE].CargarSucursalAutoCompraBI
-go
-
-select * from [ESECUELE].BI_DIM_SUCURSAL_AUTO 
-
+select * from [ESECUELE].BI_DIM_SUCURSAL 
 
 
 ----------------------------------
---DIMENSION SUCURSALX AUTOPARTE	--
+--		DIMENSION TIEMPOX		--
 ----------------------------------
 
 
-CREATE PROCEDURE [ESECUELE].CrearSucursalAutoparteBI
+CREATE PROCEDURE [ESECUELE].CrearTiempoBI
 AS
 BEGIN
-	CREATE TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE(
-		id_suc BIGINT IDENTITY(1,1) PRIMARY KEY,
-		cod_suc bigint,
-		mail_suc nvarchar(255),
-		tel_suc decimal(18,0),
-		ciu_suc nvarchar(255),
-		dir_suc nvarchar(255),
-		cod_autoparte decimal(18,0)
-	)
-END
-GO
-
-CREATE PROCEDURE [ESECUELE].CargarSucursalAutoparteVentaBI
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE(cod_suc, mail_suc, tel_suc, ciu_suc, dir_suc, cod_autoparte)
-	SELECT S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc, FA.cod_autoparte
-	FROM [ESECUELE].Sucursales S
-	JOIN [ESECUELE].Facturas F ON
-	F.cod_suc = S.cod_suc
-	JOIN [ESECUELE].FacturasAutoparte FA ON
-	FA.cod_fac_autoparte = F.cod_fac
-	GROUP BY S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc, FA.cod_autoparte
-END
-GO
-
-CREATE PROCEDURE [ESECUELE].CargarSucursalAutoparteCompraBI
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE(cod_suc, mail_suc, tel_suc, ciu_suc, dir_suc, cod_autoparte)
-	SELECT S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc, CA.cod_autoparte
-	FROM [ESECUELE].Sucursales S
-	JOIN [ESECUELE].Compras C ON
-	C.cod_suc = S.cod_suc
-	JOIN [ESECUELE].ComprasAutoparte CA ON
-	CA.cod_compra_autoparte = C.cod_compra
-	GROUP BY S.cod_suc, S.mail_suc, S.tel_suc, S.ciu_suc, S.dir_suc, CA.cod_autoparte
-END
-GO
-
-ALTER PROCEDURE [ESECUELE].AgregarKeyDimSucursalAutoparte
-AS 
-BEGIN
-	ALTER TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE ADD FOREIGN KEY (cod_suc) REFERENCES [ESECUELE].Sucursales(cod_suc)
-	ALTER TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE ADD FOREIGN KEY (cod_autoparte) REFERENCES [ESECUELE].Autopartes(cod_autoparte)
-END
-
-GO
-
-
-
-DROP TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE
-
-EXEC [ESECUELE].CrearSucursalAutoparteBI
-
-EXEC [ESECUELE].AgregarKeyDimSucursalAutoparte
-
-EXEC [ESECUELE].CargarSucursalAutoparteVentaBI
-go
-EXEC [ESECUELE].CargarSucursalAutoparteCompraBI
-go
-
-select * from [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE 
-
-
-
-----------------------------------
---			TIEMPO AUTO			--
-----------------------------------
-
-
-ALTER PROCEDURE [ESECUELE].CrearTiempoAutoBI
-AS
-BEGIN
-	CREATE TABLE [ESECUELE].BI_DIM_TIEMPO_AUTO(
+	CREATE TABLE [ESECUELE].BI_DIM_TIEMPO(
 		id_tiempo bigint identity(1,1) PRIMARY KEY,
 		discriminador nvarchar(255),
 		anio bigint,
-		mes bigint,
-		cod_auto bigint
+		mes bigint
 	)
 
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].CargarTiempoAutoBI1
+ALTER PROCEDURE [ESECUELE].CargarTiempoCompraBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_TIEMPO_AUTO(discriminador, anio , mes, cod_auto)
-	SELECT 'C', YEAR(CA.fecha_compra_auto), MONTH(ca.fecha_compra_auto), CA.cod_auto
-	FROM [ESECUELE].ComprasAuto CA
-	GROUP BY YEAR(CA.fecha_compra_auto), MONTH(ca.fecha_compra_auto), CA.cod_auto
-END
-GO
-
-ALTER PROCEDURE [ESECUELE].CargarTiempoAutoBI2
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_TIEMPO_AUTO(discriminador, anio , mes, cod_auto)
-	SELECT 'V', YEAR(F.fecha_fac), MONTH(F.fecha_fac), FA.cod_auto
-	FROM [ESECUELE].FacturasAuto FA 
-	JOIN [ESECUELE].Facturas F ON
-	FA.cod_fac_auto = F.cod_fac
-	GROUP BY YEAR(F.fecha_fac), MONTH(F.fecha_fac), FA.cod_auto
-END
-GO
-
-DROP TABLE [ESECUELE].BI_DIM_TIEMPO_AUTO
-
-EXEC [ESECUELE].CrearTiempoAutoBI
-
-EXEC [ESECUELE].CargarTiempoAutoBI1
-
-EXEC [ESECUELE].CargarTiempoAutoBI2
-
-SELECT * FROM [ESECUELE].BI_DIM_TIEMPO_AUTO
-
-
-----------------------------------
---		TIEMPO AUTOPARTEX		--
-----------------------------------
-
-ALTER PROCEDURE [ESECUELE].CrearTiempoAutoparteBI
-AS
-BEGIN
-	CREATE TABLE [ESECUELE].BI_DIM_TIEMPO_AUTOPARTE(
-		id_tiempo bigint identity(1,1) PRIMARY KEY,
-		discriminador nvarchar(255),
-		anio bigint,
-		mes bigint,
-		cod_autoparte decimal(18,0)
-	)
-
-END
-GO
-
-ALTER PROCEDURE [ESECUELE].CargarTiempoAutoparteBI1
-AS
-BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_TIEMPO_AUTOPARTE(discriminador, anio , mes, cod_autoparte)
-	SELECT 'C', YEAR(CA.fecha_compra), MONTH(CA.fecha_compra), CA.cod_autoparte
+	INSERT INTO [ESECUELE].BI_DIM_TIEMPO(discriminador, anio , mes)
+	SELECT 'C',YEAR(CA.fecha_compra), MONTH(ca.fecha_compra)
 	FROM [ESECUELE].ComprasAutoparte CA
-	GROUP BY YEAR(CA.fecha_compra), MONTH(ca.fecha_compra), CA.cod_autoparte
+	GROUP BY YEAR(CA.fecha_compra), MONTH(ca.fecha_compra)
+	INTERSECT
+	SELECT 'C' ,YEAR(CA.fecha_compra_auto), MONTH(ca.fecha_compra_auto)
+	FROM [ESECUELE].ComprasAuto CA
+	GROUP BY YEAR(CA.fecha_compra_auto), MONTH(ca.fecha_compra_auto)
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].CargarTiempoAutoparteBI2
+ALTER PROCEDURE [ESECUELE].CargarTiempoVentaBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_TIEMPO_AUTOPARTE(discriminador, anio , mes, cod_autoparte)
-	SELECT 'V', YEAR(F.fecha_fac), MONTH(F.fecha_fac), FA.cod_autoparte
-	FROM [ESECUELE].FacturasAutoparte FA 
-	JOIN [ESECUELE].Facturas F ON
-	FA.cod_fac_autoparte = F.cod_fac
-	GROUP BY YEAR(F.fecha_fac), MONTH(F.fecha_fac), FA.cod_autoparte
+	INSERT INTO [ESECUELE].BI_DIM_TIEMPO(discriminador, anio , mes)
+	SELECT 'V', YEAR(F.fecha_fac), MONTH(F.fecha_fac)
+	FROM [ESECUELE].Facturas F
+	GROUP BY YEAR(F.fecha_fac), MONTH(F.fecha_fac)
 END
 GO
 
-DROP TABLE [ESECUELE].BI_DIM_TIEMPO_AUTOPARTE
+DROP TABLE [ESECUELE].BI_DIM_TIEMPO
 
-EXEC [ESECUELE].CrearTiempoAutoparteBI
+EXEC [ESECUELE].CrearTiempoBI
 
-EXEC [ESECUELE].CargarTiempoAutoparteBI1
+EXEC [ESECUELE].CargarTiempoCompraBI
 
-EXEC [ESECUELE].CargarTiempoAutoparteBI2
+EXEC [ESECUELE].CargarTiempoVentaBI
 
-SELECT * FROM [ESECUELE].BI_DIM_TIEMPO_AUTOPARTE
+SELECT * FROM [ESECUELE].BI_DIM_TIEMPO
 
 
 ----------------------------------
@@ -644,49 +357,49 @@ SELECT * FROM [ESECUELE].BI_DIM_TIEMPO_AUTOPARTE
 ----------------------------------
 
 
-CREATE PROCEDURE [ESECUELE].CrearAutoparteBI
+ALTER PROCEDURE [ESECUELE].CrearAutoparteBI
 AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_DIM_AUTOPARTE(
 		id_autoparte bigint identity(1,1) PRIMARY KEY,
 		cod_autoparte decimal(18,0),
-		desc_autoparte nvarchar(255),
 		precio_venta_autoparte decimal(18,2)
 	)
 
 END
 GO
 
-CREATE PROCEDURE [ESECUELE].AgregarKeyDimAutoparte
+/*
+DROP PROCEDURE [ESECUELE].AgregarKeyDimAutoparte
 AS 
 BEGIN
 	ALTER TABLE [ESECUELE].BI_DIM_AUTOPARTE ADD FOREIGN KEY (cod_autoparte) REFERENCES [ESECUELE].Autopartes(cod_autoparte)
 END
 
 GO
+*/
 
-
-CREATE PROCEDURE [ESECUELE].CargarAutoparteBI
+ALTER PROCEDURE [ESECUELE].CargarAutoparteBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_AUTOPARTE(cod_autoparte, desc_autoparte, precio_venta_autoparte)
-	SELECT A.cod_autoparte, A.desc_autoparte, FA.PRECIO_UNITARIO
+	INSERT INTO [ESECUELE].BI_DIM_AUTOPARTE(cod_autoparte, precio_venta_autoparte)
+	SELECT A.cod_autoparte, FA.precio_unitario
 	FROM [ESECUELE].Autopartes A
 	INNER JOIN [ESECUELE].FacturasAutoparte FA ON
 	FA.cod_autoparte = A.cod_autoparte
-	GROUP BY A.cod_autoparte, A.desc_autoparte, FA.PRECIO_UNITARIO
+	GROUP BY A.cod_autoparte, FA.precio_unitario
 END
 GO
 
 EXEC [ESECUELE].CrearAutoparteBI
 
-EXEC [ESECUELE].AgregarKeyDimAutoparte
+-- EXEC [ESECUELE].AgregarKeyDimAutoparte
 
 EXEC [ESECUELE].CargarAutoparteBI
 
-drop table [ESECUELE].BI_DIM_AUTOPARTE
-
 SELECT * FROM [ESECUELE].BI_DIM_AUTOPARTE
+
+drop table [ESECUELE].BI_DIM_AUTOPARTE
 
 
 ----------------------------------
@@ -723,7 +436,7 @@ AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_HECHO_AUTOPARTE(
 		id_autoparte bigint identity(1,1) PRIMARY KEY,
-		cod_autoparte bigint,
+		cod_autoparte decimal(18,0),
 		cod_clie_autoparte bigint,
 		cod_modelo decimal(18,0),
 		cod_suc bigint,
@@ -734,35 +447,169 @@ BEGIN
 END
 GO
 
-CREATE PROCEDURE [ESECUELE].AgregarKeyHechosAutoparte
+ALTER PROCEDURE [ESECUELE].AgregarKeyHechosAutoparte
 AS 
 BEGIN
 	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_autoparte) REFERENCES [ESECUELE].BI_DIM_AUTOPARTE(id_autoparte)
-	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_clie_autoparte) REFERENCES [ESECUELE].BI_DIM_CLIE_AUTOPARTE(cod_clie) --
-	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_modelo) REFERENCES [ESECUELE].BI_DIM_MODELO_AUTOPARTE(id_modelo) --
-	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_suc) REFERENCES [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE(id_suc) --
-	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_tiempo_autoparte) REFERENCES [ESECUELE].DIM_TIEMPO_AUTOPARTE(id_tiempo) --
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_clie_autoparte) REFERENCES [ESECUELE].BI_DIM_CLIE(cod_clie) --
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_modelo) REFERENCES [ESECUELE].BI_DIM_MODELO(cod_mod) --
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_suc) REFERENCES [ESECUELE].BI_DIM_SUCURSAL(cod_suc) --
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_tiempo_autoparte) REFERENCES [ESECUELE].BI_DIM_TIEMPO(id_tiempo) --
 END
 
 GO
 
+SELECT * FROM [ESECUELE].BI_DIM_TIEMPO
 
-CREATE PROCEDURE [ESECUELE].CargarHechoAutoparteBI
+CREATE PROCEDURE [ESECUELE].CargarHechoComprasAutoparteBI
+AS
+BEGIN
+	INSERT INTO [ESECUELE].BI_HECHO_AUTOPARTE(cod_autoparte, cod_modelo, cod_suc, cod_tiempo_autoparte)
+	SELECT A.cod_autoparte, M.cod_modelo, S.cod_suc, T.id_tiempo
+	FROM [ESECUELE].ComprasAutoparte CA
+	JOIN [ESECUELE].Autopartes A ON
+	CA.cod_autoparte = A.cod_autoparte
+	JOIN [ESECUELE].Modelos M ON
+	A.cod_modelo = M.cod_modelo
+	JOIN [ESECUELE].Compras C ON
+	C.cod_compra = CA.cod_compra_autoparte
+	JOIN [ESECUELE].Sucursales S ON
+	C.cod_suc = S.cod_suc
+	JOIN [ESECUELE].BI_DIM_TIEMPO T ON
+	YEAR(CA.fecha_compra) = T.anio AND
+	MONTH(CA.fecha_compra) = T.mes
+	WHERE T.discriminador = 'C'
+	GROUP BY A.cod_autoparte, M.cod_modelo, S.cod_suc, T.id_tiempo
+END
+GO
+
+ALTER PROCEDURE [ESECUELE].CargarHechoVentasAutoparteBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_HECHO_AUTOPARTE(cod_autoparte, cod_clie_autoparte, cod_modelo, cod_suc, cod_tiempo_autoparte)
-	SELECT A.cod_autoparte, CA.cod_clie, M.cod_mod, S.cod_suc, TA.id_tiempo
-	FROM [ESECUELE].BI_DIM_AUTOPARTE A
-	JOIN [ESECUELE].BI_DIM_CLIE_AUTOPARTE CA ON
-	CA.cod_autoparte = A.cod_autoparte
-	JOIN [ESECUELE].BI_DIM_MODELO M ON
-	M.cod_autoparte = A.cod_autoparte
-	JOIN [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE S ON
-	S.cod_autoparte = A.cod_autoparte
-	JOIN [ESECUELE].BI_DIM_TIEMPO_AUTOPARTE TA ON
-	TA.cod_autoparte = A.cod_autoparte
-	GROUP BY A.cod_autoparte, CA.cod_clie, M.cod_mod, S.cod_suc, TA.id_tiempo
+	SELECT A.cod_autoparte, C.cod_clie, M.cod_modelo, S.cod_suc, T.id_tiempo
+	FROM [ESECUELE].Autopartes A
+	JOIN [ESECUELE].FacturasAutoparte FA ON
+	FA.cod_autoparte = A.cod_autoparte
+	JOIN [ESECUELE].Facturas F ON
+	FA.cod_fac_autoparte = F.cod_fac
+	JOIN [ESECUELE].Clientes C ON
+	F.cod_clie = C.cod_clie
+	JOIN [ESECUELE].Sucursales S ON
+	F.cod_suc = S.cod_suc
+	JOIN [ESECUELE].Modelos M ON
+	A.cod_modelo = M.cod_modelo
+	JOIN [ESECUELE].BI_DIM_TIEMPO T ON
+	YEAR(F.fecha_fac) = T.anio AND
+	MONTH(F.fecha_fac) = T.mes
+	WHERE T.discriminador = 'V'
+	GROUP BY A.cod_autoparte, C.cod_clie, M.cod_modelo, S.cod_suc, T.id_tiempo
 END
 GO
 
-select * from [ESECUELE].BI_DIM_SUCURSAL_AUTOPARTE
+EXEC [ESECUELE].CrearHechosAutoparteBI
+
+EXEC [ESECUELE].AgregarKeyHechosAutoparte
+
+EXEC [ESECUELE].CargarHechoComprasAutoparteBI
+
+EXEC [ESECUELE].CargarHechoVentasAutoparteBI
+
+SELECT * FROM [ESECUELE].BI_HECHO_AUTOPARTE
+
+
+
+
+----------------------------------
+--			HECHOS AUTOX		--
+----------------------------------
+
+CREATE PROCEDURE [ESECUELE].CrearHechosAutoBI
+AS
+BEGIN
+	CREATE TABLE [ESECUELE].BI_HECHO_AUTO(
+		id_auto bigint identity(1,1) PRIMARY KEY,
+		cod_auto decimal(18,0),
+		cod_clie_auto bigint,
+		cod_modelo decimal(18,0),
+		cod_suc bigint,
+		cod_tiempo_auto bigint
+		
+	)
+
+END
+GO
+
+CREATE PROCEDURE [ESECUELE].AgregarKeyHechosAuto
+AS 
+BEGIN
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTO ADD FOREIGN KEY (cod_auto) REFERENCES [ESECUELE].BI_DIM_AUTO(cod_auto)
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTO ADD FOREIGN KEY (cod_clie_auto) REFERENCES [ESECUELE].BI_DIM_CLIE(cod_clie) --
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTO ADD FOREIGN KEY (cod_modelo) REFERENCES [ESECUELE].BI_DIM_MODELO(cod_mod) --
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTO ADD FOREIGN KEY (cod_suc) REFERENCES [ESECUELE].BI_DIM_SUCURSAL(cod_suc) --
+	ALTER TABLE [ESECUELE].BI_HECHO_AUTO ADD FOREIGN KEY (cod_tiempo_auto) REFERENCES [ESECUELE].BI_DIM_TIEMPO(id_tiempo) --
+END
+
+GO
+
+
+ALTER PROCEDURE [ESECUELE].CargarHechoComprasAutoBI
+AS
+BEGIN
+	INSERT INTO [ESECUELE].BI_HECHO_AUTO(cod_auto, cod_modelo, cod_suc, cod_tiempo_auto)
+	SELECT A.cod_auto, M.cod_modelo, S.cod_suc, T.id_tiempo
+	FROM [ESECUELE].ComprasAuto CA
+	JOIN [ESECUELE].Autos A ON
+	CA.cod_auto = A.cod_auto
+	JOIN [ESECUELE].Modelos M ON
+	A.cod_modelo = M.cod_modelo
+	JOIN [ESECUELE].Compras C ON
+	C.cod_compra = CA.cod_compra_auto
+	JOIN [ESECUELE].Sucursales S ON
+	C.cod_suc = S.cod_suc
+	JOIN [ESECUELE].BI_DIM_TIEMPO T ON
+	YEAR(CA.fecha_compra_auto) = T.anio AND
+	MONTH(CA.fecha_compra_auto) = T.mes
+	WHERE T.discriminador = 'C'
+	GROUP BY A.cod_auto, M.cod_modelo, S.cod_suc, T.id_tiempo
+END
+GO
+
+CREATE PROCEDURE [ESECUELE].CargarHechoVentasAutoBI
+AS
+BEGIN
+	INSERT INTO [ESECUELE].BI_HECHO_AUTO(cod_auto, cod_clie_auto, cod_modelo, cod_suc, cod_tiempo_auto)
+	SELECT A.cod_auto, C.cod_clie, M.cod_modelo, S.cod_suc, T.id_tiempo
+	FROM [ESECUELE].Autos A
+	JOIN [ESECUELE].FacturasAuto FA ON
+	FA.cod_auto = A.cod_auto
+	JOIN [ESECUELE].Facturas F ON
+	FA.cod_fac_auto = F.cod_fac
+	JOIN [ESECUELE].Clientes C ON
+	F.cod_clie = C.cod_clie
+	JOIN [ESECUELE].Sucursales S ON
+	F.cod_suc = S.cod_suc
+	JOIN [ESECUELE].Modelos M ON
+	A.cod_modelo = M.cod_modelo
+	JOIN [ESECUELE].BI_DIM_TIEMPO T ON
+	YEAR(F.fecha_fac) = T.anio AND
+	MONTH(F.fecha_fac) = T.mes
+	WHERE T.discriminador = 'V'
+	GROUP BY A.cod_auto, C.cod_clie, M.cod_modelo, S.cod_suc, T.id_tiempo
+END
+GO
+
+EXEC [ESECUELE].CrearHechosAutoBI
+
+EXEC [ESECUELE].AgregarKeyHechosAuto
+
+EXEC [ESECUELE].CargarHechoComprasAutoBI
+
+EXEC [ESECUELE].CargarHechoVentasAutoBI
+
+SELECT * FROM [ESECUELE].BI_HECHO_AUTO
+
+
+
+
+
