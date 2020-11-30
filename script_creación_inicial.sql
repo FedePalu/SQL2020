@@ -192,7 +192,7 @@ AS
 BEGIN
 	SET	NOCOUNT ON;
 	INSERT INTO [ESECUELE].Facturas (nro_fac, precio_fac, fecha_fac, fecha_clie_fac, cod_clie, cod_suc)
-	SELECT M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
+	SELECT M.FACTURA_NRO, SUM(M.PRECIO_FACTURADO), M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 	FROM gd_esquema.Maestra M
 	LEFT JOIN [ESECUELE].Clientes C on 
 	C.dni_clie = M.CLIENTE_DNI 
@@ -202,17 +202,19 @@ BEGIN
 	M.FACTURA_FECHA IS NOT NULL AND
 	M.CLIENTE_NOMBRE IS NOT NULL AND
 	M.FAC_CLIENTE_FECHA_NAC IS NOT NULL
-	GROUP BY M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
+	GROUP BY M.FACTURA_NRO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 END
 
 GO
+
+
 
 CREATE PROCEDURE [ESECUELE].CargarFacturas2
 AS
 BEGIN
 	SET	NOCOUNT ON;
 	INSERT INTO [ESECUELE].Facturas (nro_fac, precio_fac, fecha_fac, fecha_clie_fac, cod_clie, cod_suc)
-	SELECT M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
+	SELECT M.FACTURA_NRO, SUM(M.PRECIO_FACTURADO), M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 	FROM gd_esquema.Maestra M
 	LEFT JOIN [ESECUELE].Clientes C on 
 	C.dni_clie = M.FAC_CLIENTE_DNI
@@ -221,9 +223,8 @@ BEGIN
 	M.PRECIO_FACTURADO IS NOT NULL AND
 	M.FACTURA_FECHA IS NOT NULL AND
 	--M.FAC_CLIENTE_NOMBRE IS NOT NULL AND
-	M.FAC_CLIENTE_FECHA_NAC IS NOT NULL AND
-	FAC_CLIENTE_DNI = '14791857'
-	GROUP BY M.FACTURA_NRO, M.PRECIO_FACTURADO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
+	M.FAC_CLIENTE_FECHA_NAC IS NOT NULL
+	GROUP BY M.FACTURA_NRO, M.FACTURA_FECHA, M.FAC_CLIENTE_FECHA_NAC, C.cod_clie, S.cod_suc
 END
 
 GO
@@ -578,7 +579,6 @@ BEGIN
 	CREATE TABLE [ESECUELE].Autopartes(
 		cod_autoparte decimal(18,0) PRIMARY KEY,
 		desc_autoparte nvarchar(255),
-		precio_autoparte decimal(18,2), -- Pedido en el enunciado
 		cod_modelo decimal(18,0)
 	)
 END
@@ -592,7 +592,7 @@ BEGIN
 END
 
 GO
-
+--FALTA ESTO
 CREATE PROCEDURE [ESECUELE].CargarAutopartes
 AS
 BEGIN
@@ -667,7 +667,6 @@ BEGIN
     FROM gd_esquema.Maestra M
     LEFT JOIN [ESECUELE].Facturas F ON 
 	F.nro_fac = M.FACTURA_NRO AND 
-	F.precio_fac = M.PRECIO_FACTURADO AND 
 	F.fecha_fac = M.FACTURA_FECHA AND 
 	F.fecha_clie_fac = M.FAC_CLIENTE_FECHA_NAC
     LEFT JOIN [ESECUELE].Autos A ON 
@@ -722,6 +721,7 @@ BEGIN
 		cod_fac_autoparte bigint,
         cod_autoparte decimal(18,0),
 		cant_autopartes bigint, -- Pedida en el enunciado
+		precio_unitario decimal (18,2),
 		ciudad_origen nvarchar(255) -- Pedida en el enunciado
     )
 END
@@ -737,24 +737,26 @@ END
 
 GO
 
+
 CREATE PROCEDURE [ESECUELE].CargarFacturasAutoparte
 AS
 SET NOCOUNT ON
 BEGIN
-    INSERT INTO [ESECUELE].FacturasAutoparte(cod_fac_autoparte, cod_autoparte)
-    SELECT F.cod_fac, A.cod_autoparte
+    INSERT INTO [ESECUELE].FacturasAutoparte(cod_fac_autoparte, cod_autoparte, cant_autopartes, precio_unitario)
+    SELECT F.cod_fac, A.cod_autoparte, M.CANT_FACTURADA, M.PRECIO_FACTURADO / M.CANT_FACTURADA
     FROM gd_esquema.Maestra M
     LEFT JOIN [ESECUELE].Facturas F ON 
 	F.nro_fac = M.FACTURA_NRO AND 
-	F.precio_fac = M.PRECIO_FACTURADO AND 
 	F.fecha_fac = M.FACTURA_FECHA AND 
 	F.fecha_clie_fac = M.FAC_CLIENTE_FECHA_NAC
     LEFT JOIN [ESECUELE].Autopartes A ON 
 	A.cod_autoparte = M.AUTO_PARTE_CODIGO AND 
 	A.desc_autoparte = M.AUTO_PARTE_DESCRIPCION
 	WHERE M.AUTO_PARTE_CODIGO IS NOT NULL AND 
-	M.FACTURA_NRO IS NOT NULL
-    GROUP BY F.cod_fac, A.cod_autoparte
+	M.FACTURA_NRO IS NOT NULL AND
+	M.CANT_FACTURADA IS NOT NULL AND
+	M.PRECIO_FACTURADO IS NOT NULL
+    GROUP BY F.cod_fac, A.cod_autoparte, M.CANT_FACTURADA, M.PRECIO_FACTURADO / M.CANT_FACTURADA
 END
 
 GO
@@ -829,7 +831,8 @@ BEGIN
 	A.nro_motor = M.AUTO_NRO_MOTOR AND
 	A.pat_auto = M.AUTO_PATENTE 
 	WHERE M.TIPO_AUTO_CODIGO IS NOT NULL AND 
-	M.COMPRA_NRO IS NOT NULL
+	M.COMPRA_NRO IS NOT NULL AND
+	M.COMPRA_FECHA IS NOT NULL
     GROUP BY C.cod_compra, A.cod_auto, M.COMPRA_FECHA, M.COMPRA_PRECIO
 END
 
@@ -869,7 +872,9 @@ BEGIN
         id_compra_autoparte bigint identity(1,1) PRIMARY KEY,
 		cod_compra_autoparte bigint,
         cod_autoparte decimal(18,0),
-		cant_compra_autoparte bigint
+		cant_compra_autoparte bigint,
+		precio_unitario decimal(18,2),
+		fecha_compra datetime2(3)
     )
 END
 
@@ -888,8 +893,8 @@ CREATE PROCEDURE [ESECUELE].CargarComprasAutoparte
 AS
 SET NOCOUNT ON
 BEGIN
-    INSERT INTO [ESECUELE].ComprasAutoparte(cod_compra_autoparte, cod_autoparte)
-    SELECT C.cod_compra, A.cod_autoparte
+    INSERT INTO [ESECUELE].ComprasAutoparte(cod_compra_autoparte, cod_autoparte, cant_compra_autoparte, precio_unitario, fecha_compra)
+    SELECT C.cod_compra, A.cod_autoparte, M.COMPRA_CANT, M.COMPRA_PRECIO / M.COMPRA_CANT, M.COMPRA_FECHA
     FROM gd_esquema.Maestra M
     LEFT JOIN [ESECUELE].Compras C ON 
 	C.nro_compra = M.COMPRA_NRO
@@ -897,8 +902,11 @@ BEGIN
 	A.cod_autoparte = M.AUTO_PARTE_CODIGO AND 
 	A.desc_autoparte = M.AUTO_PARTE_DESCRIPCION
 	WHERE M.AUTO_PARTE_CODIGO IS NOT NULL AND 
-	M.COMPRA_NRO IS NOT NULL
-    GROUP BY C.cod_compra, A.cod_autoparte
+	M.COMPRA_NRO IS NOT NULL AND
+	M.COMPRA_FECHA IS NOT NULL AND
+	M.COMPRA_PRECIO IS NOT NULL AND
+	M.COMPRA_CANT IS NOT NULL
+    GROUP BY C.cod_compra, A.cod_autoparte, M.COMPRA_CANT, M.COMPRA_PRECIO / M.COMPRA_CANT, M.COMPRA_FECHA
 END
 
 GO
@@ -912,6 +920,7 @@ BEGIN
 END
 
 GO
+
 
 CREATE PROCEDURE [ESECUELE].EliminarComprasAutoparte
 AS
@@ -957,14 +966,13 @@ DROP PROCEDURE [ESECUELE].MigracionDeDatos
 
 GO
 
-
-
+SELECT * FROM [ESECUELE].ComprasAutoparte
 
 ----------------------------------------------
 --			ELIMINAR PROCEDIMIENTOS			--
 ----------------------------------------------
-/*
 
+/*
 DROP TABLE [ESECUELE].ComprasAutoparte
 DROP TABLE [ESECUELE].ComprasAuto
 DROP TABLE [ESECUELE].FacturasAutoparte
