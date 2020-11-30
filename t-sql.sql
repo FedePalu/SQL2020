@@ -33,22 +33,11 @@ BEGIN
 
 END
 
-/*
-CRAETE PROCEDURE [ESECUELE].AgregarKeyDimAuto
-AS 
-BEGIN
-	ALTER TABLE [ESECUELE].BI_DIM_AUTO ADD FOREIGN KEY (cod_auto) REFERENCES [ESECUELE].Autos(cod_auto)
-END
-GO
-*/
-
-select * from [ESECUELE].motores
-
-ALTER PROCEDURE [ESECUELE].CargarAutosBI
+CREATE PROCEDURE [ESECUELE].CargarAutosChicosBI
 AS
 BEGIN
-	INSERT INTO [ESECUELE].BI_DIM_AUTO(cod_auto ,tipo_auto, tipo_caja, cant_cambios, tipo_motor, cod_transmision, cod_modelo)
-	SELECT A.cod_auto, A.tipo_auto, C.tipo_caja, C.cant_cambios, MOT.tipo_motor, C.cod_transmision, A.cod_modelo
+	INSERT INTO [ESECUELE].BI_DIM_AUTO(cod_auto ,tipo_auto, tipo_caja, cant_cambios, tipo_motor, cod_transmision, cod_modelo, pot_motor)
+	SELECT A.cod_auto, A.tipo_auto, C.tipo_caja, C.cant_cambios, MOT.tipo_motor, C.cod_transmision, A.cod_modelo, '50-150'
 	FROM [ESECUELE].Autos A
 	INNER JOIN [ESECUELE].Modelos M ON
 	A.cod_modelo = M.cod_modelo
@@ -56,64 +45,60 @@ BEGIN
 	M.cod_caja = C.cod_caja
 	INNER JOIN [ESECUELE].Motores MOT ON
 	m.cod_motor = mot.cod_motor
+	WHERE MOT.pot_motor
+	BETWEEN 50 AND 150
+	GROUP BY A.cod_auto, A.tipo_auto, C.tipo_caja, C.cant_cambios, MOT.tipo_motor, C.cod_transmision, A.cod_modelo
+END
+GO
+
+CREATE PROCEDURE [ESECUELE].CargarAutosMedianosBI
+AS
+BEGIN
+	INSERT INTO [ESECUELE].BI_DIM_AUTO(cod_auto ,tipo_auto, tipo_caja, cant_cambios, tipo_motor, cod_transmision, cod_modelo, pot_motor)
+	SELECT A.cod_auto, A.tipo_auto, C.tipo_caja, C.cant_cambios, MOT.tipo_motor, C.cod_transmision, A.cod_modelo, '151-300'
+	FROM [ESECUELE].Autos A
+	INNER JOIN [ESECUELE].Modelos M ON
+	A.cod_modelo = M.cod_modelo
+	INNER JOIN [ESECUELE].Cajas_de_cambio C ON
+	M.cod_caja = C.cod_caja
+	INNER JOIN [ESECUELE].Motores MOT ON
+	m.cod_motor = mot.cod_motor
+	WHERE MOT.pot_motor
+	BETWEEN 151 AND 300
 	GROUP BY A.cod_auto, A.tipo_auto, C.tipo_caja, C.cant_cambios, MOT.tipo_motor, C.cod_transmision, A.cod_modelo
 END
 GO
 
 
-CREATE PROCEDURE [ESECUELE].ActualizarPotenciaBI
+CREATE PROCEDURE [ESECUELE].CargarAutosGrandesBI
 AS
 BEGIN
-	DECLARE @potencia decimal(18,0)
-	DECLARE @cod_auto bigint
-	DECLARE cursor_autos CURSOR FOR (SELECT MOT.pot_motor, A.cod_auto FROM [ESECUELE].BI_DIM_AUTO A
-									INNER JOIN [ESECUELE].Modelos MO ON
-									A.cod_modelo = MO.cod_modelo
-									INNER JOIN [ESECUELE].Motores MOT ON
-									MO.cod_motor = MOT.cod_motor
-									)
-
-	OPEN cursor_autos
-	FETCH NEXT FROM cursor_autos INTO @potencia ,@cod_auto
-	WHILE (@@FETCH_STATUS = 0)
-	BEGIN
-		IF(@potencia >= 50 AND @potencia <= 150)
-		BEGIN
-			UPDATE [ESECUELE].BI_DIM_AUTO SET pot_motor = '50-150' WHERE cod_auto = @cod_auto
-		END
-		ELSE 
-		IF (@potencia > 150 AND @potencia <= 300)
-		BEGIN
-			UPDATE [ESECUELE].BI_DIM_AUTO SET pot_motor = '151-300' WHERE cod_auto = @cod_auto
-		END
-		ELSE IF (@potencia > 300) 
-		BEGIN
-			UPDATE [ESECUELE].BI_DIM_AUTO SET pot_motor = '>300' WHERE cod_auto = @cod_auto
-		END
-		ELSE 
-		BEGIN
-			DELETE FROM [ESECUELE].BI_DIM_AUTO WHERE pot_motor = @potencia	
-		END
-		FETCH NEXT FROM cursor_autos INTO @potencia, @cod_auto
-	END
-
-	CLOSE cursor_autos
-	DEALLOCATE cursor_autos
-
+	INSERT INTO [ESECUELE].BI_DIM_AUTO(cod_auto ,tipo_auto, tipo_caja, cant_cambios, tipo_motor, cod_transmision, cod_modelo, pot_motor)
+	SELECT A.cod_auto, A.tipo_auto, C.tipo_caja, C.cant_cambios, MOT.tipo_motor, C.cod_transmision, A.cod_modelo, '>300'
+	FROM [ESECUELE].Autos A
+	INNER JOIN [ESECUELE].Modelos M ON
+	A.cod_modelo = M.cod_modelo
+	INNER JOIN [ESECUELE].Cajas_de_cambio C ON
+	M.cod_caja = C.cod_caja
+	INNER JOIN [ESECUELE].Motores MOT ON
+	m.cod_motor = mot.cod_motor
+	WHERE MOT.pot_motor > 300
+	GROUP BY A.cod_auto, A.tipo_auto, C.tipo_caja, C.cant_cambios, MOT.tipo_motor, C.cod_transmision, A.cod_modelo
 END
 GO
 
 DROP TABLE [ESECUELE].BI_DIM_AUTO
 
 EXEC [ESECUELE].CrearAutosBI
+GO
 
--- EXEC [ESECUELE].AgregarKeyDimAuto
+EXEC [ESECUELE].CargarAutosChicosBI
+GO
+EXEC [ESECUELE].CargarAutosMedianosBI
+GO
+EXEC [ESECUELE].CargarAutosGrandesBI
+GO
 
-EXEC [ESECUELE].CargarAutosBI
-
-select * from [ESECUELE].BI_DIM_AUTO 
-
-EXEC [ESECUELE].ActualizarPotenciaBI
 
 --------------------------------------
 --		DIMENSION CLIENTES			--
@@ -130,15 +115,8 @@ BEGIN
 	)
 
 END
-
-/*
-CREATE PROCEDURE [ESECUELE].AgregarKeyDimClieAuto
-AS 
-BEGIN
-	ALTER TABLE [ESECUELE].BI_DIM_CLIE_AUTO ADD FOREIGN KEY (cod_clie) REFERENCES [ESECUELE].Clientes(cod_clie)
-END
 GO
-*/
+
 
 CREATE PROCEDURE [ESECUELE].CargarClientesJovenesBI
 AS
@@ -183,20 +161,16 @@ END
 GO
 
 
-DROP TABLE [ESECUELE].BI_DIM_CLIE
-
 EXEC [ESECUELE].CrearClientesBI
-
--- EXEC [ESECUELE].AgregarKeyDimClieAuto
+GO
 
 EXEC [ESECUELE].CargarClientesJovenesBI
-go
+GO
 EXEC [ESECUELE].CargarClientesMedianosBI
-go
+GO
 EXEC [ESECUELE].CargarClientesViejosBI
-go
+GO
 
-select * from [ESECUELE].BI_DIM_CLIE 
 
 
 ----------------------------------
@@ -204,7 +178,7 @@ select * from [ESECUELE].BI_DIM_CLIE
 ----------------------------------
 
 
-ALTER PROCEDURE [ESECUELE].CrearModeloBI
+CREATE PROCEDURE [ESECUELE].CrearModeloBI
 AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_DIM_MODELO(
@@ -214,16 +188,7 @@ BEGIN
 	)
 
 END
-
-/*
-ALTER PROCEDURE [ESECUELE].AgregarKeyDimModelo
-AS 
-BEGIN
-	ALTER TABLE [ESECUELE].BI_DIM_MODELO ADD FOREIGN KEY (cod_mod) REFERENCES [ESECUELE].Modelos(cod_modelo)
-END
-
 GO
-*/
 
 CREATE PROCEDURE [ESECUELE].CargarModeloBI
 AS
@@ -235,16 +200,12 @@ BEGIN
 END
 GO
 
-
-DROP TABLE [ESECUELE].BI_DIM_MODELO
-
 EXEC [ESECUELE].CrearModeloBI
-
---EXEC [ESECUELE].AgregarKeyDimModelo
+GO
 
 EXEC [ESECUELE].CargarModeloBI
+GO
 
-select * from [ESECUELE].BI_DIM_MODELO 
 
 
 ----------------------------------
@@ -275,26 +236,11 @@ BEGIN
 END
 GO
 
-/*
-DROP PROCEDURE [ESECUELE].AgregarKeyDimSucursalAuto
-AS 
-BEGIN
-	ALTER TABLE [ESECUELE].BI_DIM_SUCURSAL_AUTO ADD FOREIGN KEY (cod_suc) REFERENCES [ESECUELE].Sucursales(cod_suc)
-END
-
-GO
-*/
-
-
-DROP TABLE [ESECUELE].BI_DIM_SUCURSAL
-
 EXEC [ESECUELE].CrearSucursalBI
-
--- EXEC [ESECUELE].AgregarKeyDimSucursal
+GO
 
 EXEC [ESECUELE].CargarSucursalBI
-
-select * from [ESECUELE].BI_DIM_SUCURSAL 
+GO
 
 
 ----------------------------------
@@ -315,7 +261,7 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].CargarTiempoCompraBI
+CREATE PROCEDURE [ESECUELE].CargarTiempoCompraBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_DIM_TIEMPO(discriminador, anio , mes)
@@ -329,7 +275,7 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].CargarTiempoVentaBI
+CREATE PROCEDURE [ESECUELE].CargarTiempoVentaBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_DIM_TIEMPO(discriminador, anio , mes)
@@ -339,23 +285,19 @@ BEGIN
 END
 GO
 
-DROP TABLE [ESECUELE].BI_DIM_TIEMPO
-
 EXEC [ESECUELE].CrearTiempoBI
-
+GO
 EXEC [ESECUELE].CargarTiempoCompraBI
-
+GO
 EXEC [ESECUELE].CargarTiempoVentaBI
-
-SELECT * FROM [ESECUELE].BI_DIM_TIEMPO
-
+GO
 
 ----------------------------------
 --			AUTOPARTEX			--
 ----------------------------------
 
 
-ALTER PROCEDURE [ESECUELE].CrearAutoparteBI
+CREATE PROCEDURE [ESECUELE].CrearAutoparteBI
 AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_DIM_AUTOPARTE(
@@ -366,11 +308,8 @@ BEGIN
 END
 GO
 
-SELECT * FROM [ESECUELE].FacturasAutoparte
 
-SELECT * FROM gd_esquema.Maestra
-
-ALTER PROCEDURE [ESECUELE].CargarAutoparteBI
+CREATE PROCEDURE [ESECUELE].CargarAutoparteBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_DIM_AUTOPARTE(cod_autoparte, desc_autoparte)
@@ -382,12 +321,10 @@ GO
 
 
 EXEC [ESECUELE].CrearAutoparteBI
-
+GO
 EXEC [ESECUELE].CargarAutoparteBI
+GO
 
-SELECT * FROM [ESECUELE].BI_DIM_AUTOPARTE
-
-drop table [ESECUELE].BI_DIM_AUTOPARTE
 
 ----------------------------------
 --		PRECIO VENTA AUTO		--
@@ -406,7 +343,7 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].CargarPrecioVentaAutoBI
+CREATE PROCEDURE [ESECUELE].CargarPrecioVentaAutoBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_DIM_PRECIO_VENTA_AUTO(cod_auto, precio_venta_auto, fecha_venta_auto)
@@ -421,10 +358,9 @@ END
 GO
 
 EXEC [ESECUELE].CrearPrecioVentaAutoBI
-
+GO
 EXEC [ESECUELE].CargarPrecioVentaAutoBI
-
-SELECT * FROM [ESECUELE].BI_DIM_PRECIO_VENTA_AUTO
+GO
 
 ----------------------------------
 --		PRECIO COMPRA AUTO		--
@@ -456,17 +392,16 @@ END
 GO
 
 EXEC [ESECUELE].CrearPrecioCompraAutoBI
-
+GO
 EXEC [ESECUELE].CargarPrecioCompraAutoBI
-
-SELECT * FROM [ESECUELE].BI_DIM_PRECIO_COMPRA_AUTO
+GO
 
 
 ----------------------------------
 --	PRECIO VENTA AUTOPARTE		--
 ----------------------------------
 
-ALTER PROCEDURE [ESECUELE].CrearPrecioVentaAutoparteBI
+CREATE PROCEDURE [ESECUELE].CrearPrecioVentaAutoparteBI
 AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_DIM_PRECIO_VENTA_AUTOPARTE(
@@ -496,15 +431,9 @@ END
 GO
 
 EXEC [ESECUELE].CrearPrecioVentaAutoparteBI
-
+GO
 EXEC [ESECUELE].CargarPrecioVentaAutoparteBI
-
-SELECT * FROM [ESECUELE].BI_DIM_PRECIO_VENTA_AUTOPARTE
-
-drop table [ESECUELE].BI_DIM_PRECIO_VENTA_AUTOPARTE
-
-SELECT * FROM [ESECUELE].Autopartes
-
+GO
 
 
 ----------------------------------
@@ -512,7 +441,7 @@ SELECT * FROM [ESECUELE].Autopartes
 ----------------------------------
 
 
-ALTER PROCEDURE [ESECUELE].CrearPrecioCompraAutoparteBI
+CREATE PROCEDURE [ESECUELE].CrearPrecioCompraAutoparteBI
 AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_DIM_PRECIO_COMPRA_AUTOPARTE(
@@ -526,7 +455,7 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].CargarPrecioCompraAutoparteBI
+CREATE PROCEDURE [ESECUELE].CargarPrecioCompraAutoparteBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_DIM_PRECIO_COMPRA_AUTOPARTE(cod_autoparte, precio_compra_autoparte, fecha_compra_autoparte, cant_compra_autoparte)
@@ -538,21 +467,18 @@ BEGIN
 END
 GO
 
-DROP TABLE [ESECUELE].BI_DIM_PRECIO_COMPRA_AUTOPARTE
 
 EXEC [ESECUELE].CrearPrecioCompraAutoparteBI
-
+GO
 EXEC [ESECUELE].CargarPrecioCompraAutoparteBI
-
-SELECT * FROM [ESECUELE].BI_DIM_PRECIO_COMPRA_AUTOPARTE 
-
+GO
 
 
 ----------------------------------
 --		HECHOS AUTOPARTEX		--
 ----------------------------------
 
-alter PROCEDURE [ESECUELE].CrearHechosAutoparteBI
+CREATE PROCEDURE [ESECUELE].CrearHechosAutoparteBI
 AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_HECHO_AUTOPARTE(
@@ -569,7 +495,7 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].AgregarKeyHechosAutoparte
+CREATE PROCEDURE [ESECUELE].AgregarKeyHechosAutoparte
 AS 
 BEGIN
 	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_autoparte) REFERENCES [ESECUELE].BI_DIM_AUTOPARTE(cod_autoparte)
@@ -580,12 +506,10 @@ BEGIN
 	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_precio_venta_autoparte) REFERENCES [ESECUELE].BI_DIM_PRECIO_VENTA_AUTOPARTE(id_venta_autoparte) --
 	ALTER TABLE [ESECUELE].BI_HECHO_AUTOPARTE ADD FOREIGN KEY (cod_precio_compra_autoparte) REFERENCES [ESECUELE].BI_DIM_PRECIO_COMPRA_AUTOPARTE(id_compra_autoparte) --
 END
-
 GO
 
-SELECT * FROM [ESECUELE].BI_DIM_TIEMPO
 
-alter PROCEDURE [ESECUELE].CargarHechoComprasAutoparteBI
+CREATE PROCEDURE [ESECUELE].CargarHechoComprasAutoparteBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_HECHO_AUTOPARTE(cod_autoparte, cod_modelo, cod_suc, cod_tiempo_autoparte, cod_precio_compra_autoparte)
@@ -610,7 +534,7 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].CargarHechoVentasAutoparteBI
+CREATE PROCEDURE [ESECUELE].CargarHechoVentasAutoparteBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_HECHO_AUTOPARTE(cod_autoparte, cod_clie_autoparte, cod_modelo, cod_suc, cod_tiempo_autoparte, cod_precio_venta_autoparte)
@@ -638,24 +562,19 @@ END
 GO
 
 EXEC [ESECUELE].CrearHechosAutoparteBI
-
+GO
 EXEC [ESECUELE].AgregarKeyHechosAutoparte
-
+GO
 EXEC [ESECUELE].CargarHechoComprasAutoparteBI
 GO
 EXEC [ESECUELE].CargarHechoVentasAutoparteBI
 GO
 
-SELECT * FROM [ESECUELE].BI_HECHO_AUTOPARTE
-
-DROP TABLE [ESECUELE].BI_HECHO_AUTOPARTE
-
-
 ----------------------------------
 --			HECHOS AUTOX		--
 ----------------------------------
 
-ALTER PROCEDURE [ESECUELE].CrearHechosAutoBI
+CREATE PROCEDURE [ESECUELE].CrearHechosAutoBI
 AS
 BEGIN
 	CREATE TABLE [ESECUELE].BI_HECHO_AUTO(
@@ -671,7 +590,7 @@ BEGIN
 END
 GO
 
-ALTER PROCEDURE [ESECUELE].AgregarKeyHechosAuto
+CREATE PROCEDURE [ESECUELE].AgregarKeyHechosAuto
 AS 
 BEGIN
 	ALTER TABLE [ESECUELE].BI_HECHO_AUTO ADD FOREIGN KEY (cod_auto) REFERENCES [ESECUELE].BI_DIM_AUTO(cod_auto)
@@ -680,11 +599,10 @@ BEGIN
 	ALTER TABLE [ESECUELE].BI_HECHO_AUTO ADD FOREIGN KEY (cod_suc) REFERENCES [ESECUELE].BI_DIM_SUCURSAL(cod_suc) --
 	ALTER TABLE [ESECUELE].BI_HECHO_AUTO ADD FOREIGN KEY (cod_tiempo_auto) REFERENCES [ESECUELE].BI_DIM_TIEMPO(id_tiempo) --
 END
-
 GO
 
 
-ALTER PROCEDURE [ESECUELE].CargarHechoComprasAutoBI
+CREATE PROCEDURE [ESECUELE].CargarHechoComprasAutoBI
 AS
 BEGIN
 	INSERT INTO [ESECUELE].BI_HECHO_AUTO(cod_auto, cod_modelo, cod_suc, cod_tiempo_auto)
@@ -731,17 +649,13 @@ END
 GO
 
 EXEC [ESECUELE].CrearHechosAutoBI
-
+GO
 EXEC [ESECUELE].AgregarKeyHechosAuto
-
+GO
 EXEC [ESECUELE].CargarHechoComprasAutoBI
-
+GO
 EXEC [ESECUELE].CargarHechoVentasAutoBI
-
-SELECT * FROM [ESECUELE].BI_HECHO_AUTO
-
-drop table [ESECUELE].BI_HECHO_AUTO
-
+GO
 
 
 ----------------------------------
@@ -873,3 +787,4 @@ WHERE T.anio = YEAR(PCA.fecha_compra_autoparte) AND
 T.anio = YEAR(PVA.fecha_venta_autoparte) AND
 YEAR(PCA.fecha_compra_autoparte) = YEAR(PVA.fecha_venta_autoparte) 
 GROUP BY HA.cod_suc, T.anio
+GO
